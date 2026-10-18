@@ -1,0 +1,2318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafePlant Mobile - EBR Batching Plant Safety Portal</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brandGreen: '#1E4620',
+                        brandGold: '#DDAA11',
+                        brandWhite: '#FFFFFF',
+                        brandCharcoal: '#2B2B2B',
+                        brandLightGray: '#F4F6F4'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Roboto', 'sans-serif'],
+                        heading: ['Roboto', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts, FontAwesome Icons & Chart.js CDN -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #121212;
+            color: #2B2B2B;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #1E4620;
+            border-radius: 4px;
+        }
+
+        /* FIXED PRINT STYLES */
+        @media print {
+            body {
+                background-color: #ffffff !important;
+                color: #000000 !important;
+            }
+            body > *:not(#printableShiftReport) {
+                display: none !important;
+            }
+            #printableShiftReport {
+                display: block !important;
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 24px !important;
+                background: #ffffff !important;
+                color: #000000 !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-0 sm:p-4">
+
+    <!-- Mobile Frame Container -->
+    <div class="w-full max-w-md bg-white min-h-screen sm:min-h-[840px] sm:max-h-[900px] sm:rounded-3xl shadow-2xl flex flex-col justify-between overflow-hidden relative border-0 sm:border-4 border-brandCharcoal/20">
+
+        <!-- System Header Bar -->
+        <header class="bg-brandGreen text-white px-4 py-3 flex items-center justify-between shadow-md z-10">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-shield-halved text-brandGold text-xl"></i>
+                <div>
+                    <h1 class="font-heading font-bold text-sm tracking-wide leading-tight">SafePlant Mobile</h1>
+                    <p class="text-[10px] text-brandGold font-medium">EBR Batching Plant • Brgy. Macabug</p>
+                </div>
+            </div>
+            <div id="headerActions" class="flex items-center space-x-2">
+                <button onclick="toggleDbSchemaModal()" title="View Database SQL Schema" class="text-xs bg-white/10 hover:bg-white/20 text-white px-2 py-1 rounded transition">
+                    <i class="fa-solid fa-database text-brandGold mr-1"></i>SQL Schema
+                </button>
+            </div>
+        </header>
+
+        <!-- Dynamic Content Body -->
+        <main id="appContainer" class="flex-1 overflow-y-auto p-4 custom-scrollbar bg-brandLightGray relative">
+
+            <!-- ================= VIEW 1: LOGIN ================= -->
+            <section id="loginView" class="space-y-4">
+                <div class="text-center my-2">
+                    <div class="w-16 h-16 bg-brandGreen/10 border-2 border-brandGreen rounded-full flex items-center justify-center mx-auto mb-2 text-brandGreen">
+                        <i class="fa-solid fa-helmet-safety text-3xl"></i>
+                    </div>
+                    <h2 class="font-heading font-bold text-xl text-brandCharcoal">System Authentication</h2>
+                    <p class="text-xs text-gray-600">Enter credentials to access role-based features</p>
+                </div>
+
+                <!-- Demo Account Quick Selector -->
+                <div class="bg-amber-50 border border-brandGold/40 p-2.5 rounded-lg text-xs space-y-1">
+                    <div class="font-semibold text-amber-900 flex items-center justify-between">
+                        <span><i class="fa-solid fa-key mr-1 text-brandGold"></i> Preset Accounts:</span>
+                        <span class="text-[10px] bg-amber-200/80 text-amber-900 px-1.5 py-0.5 rounded">Pass: Demo@123</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-1 pt-1">
+                        <button onclick="fillLogin('inspector@ebr.ph', 'Demo@123')" class="bg-white border border-amber-200 hover:border-brandGreen p-1 rounded text-center text-[11px] font-medium text-gray-700 transition">
+                            <i class="fa-solid fa-user-check text-brandGreen text-[10px] block"></i> Personnel
+                        </button>
+                        <button onclick="fillLogin('supervisor@ebr.ph', 'Demo@123')" class="bg-white border border-amber-200 hover:border-brandGreen p-1 rounded text-center text-[11px] font-medium text-gray-700 transition">
+                            <i class="fa-solid fa-user-gear text-brandGold text-[10px] block"></i> Supervisor
+                        </button>
+                        <button onclick="fillLogin('engineer@ebr.ph', 'Demo@123')" class="bg-white border border-amber-200 hover:border-brandGreen p-1 rounded text-center text-[11px] font-medium text-gray-700 transition">
+                            <i class="fa-solid fa-user-shield text-blue-600 text-[10px] block"></i> Admin/Engineer
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Lockout Warning Banner -->
+                <div id="lockoutBanner" class="hidden bg-red-100 border border-red-400 text-red-700 p-3 rounded-lg text-xs flex items-center space-x-2">
+                    <i class="fa-solid fa-triangle-exclamation text-lg animate-pulse"></i>
+                    <div>
+                        <p class="font-bold">Account Locked Out</p>
+                        <p>Too many failed login attempts. Try again in <span id="lockoutTimer" class="font-bold underline">00:00</span>.</p>
+                    </div>
+                </div>
+
+                <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-3 bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                    <div>
+                        <label class="block text-xs font-semibold text-brandCharcoal mb-1">Username or Email</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 text-xs">
+                                <i class="fa-solid fa-envelope"></i>
+                            </span>
+                            <input type="text" id="loginUsername" required placeholder="name@ebr.ph" class="w-full pl-8 pr-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-brandGreen focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-brandCharcoal mb-1">Password</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 text-xs">
+                                <i class="fa-solid fa-lock"></i>
+                            </span>
+                            <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full pl-8 pr-9 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-brandGreen focus:outline-none">
+                            <button type="button" onclick="togglePasswordVisibility('loginPassword', 'loginEyeIcon')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-brandCharcoal">
+                                <i id="loginEyeIcon" class="fa-solid fa-eye text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between text-xs pt-1">
+                        <label class="flex items-center text-gray-600">
+                            <input type="checkbox" id="rememberMe" class="rounded text-brandGreen focus:ring-brandGreen mr-1.5"> Remember me
+                        </label>
+                        <button type="button" onclick="openOtpRecoveryModal()" class="text-brandGreen hover:underline font-medium">Forgot Password?</button>
+                    </div>
+
+                    <button type="submit" id="btnLoginSubmit" class="w-full bg-brandGreen text-white py-2.5 rounded-lg text-xs font-semibold hover:bg-emerald-900 transition flex items-center justify-center space-x-2 shadow-md">
+                        <span>Sign In to Dashboard</span>
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                    </button>
+                </form>
+
+                <div class="text-center text-xs text-gray-600">
+                    Don't have an inspector account? 
+                    <button onclick="switchView('registerView')" class="text-brandGreen font-bold hover:underline">Register Account</button>
+                </div>
+            </section>
+
+
+            <!-- ================= VIEW 2: REGISTER ================= -->
+            <section id="registerView" class="hidden space-y-3">
+                <div class="text-center my-1">
+                    <h2 class="font-heading font-bold text-lg text-brandCharcoal">Inspector Registration</h2>
+                    <p class="text-xs text-gray-600">Create account with IAS security policy compliance</p>
+                </div>
+
+                <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-2.5 bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                    <div>
+                        <label class="block text-xs font-semibold text-brandCharcoal mb-1">Full Name</label>
+                        <input type="text" id="regFullName" required placeholder="e.g., Sarah Mae Coyme" class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-brandGreen focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-brandCharcoal mb-1">Email / Username</label>
+                        <input type="email" id="regEmail" required placeholder="user@ebr.ph" class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-brandGreen focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-brandCharcoal mb-1">System Role</label>
+                        <select id="regRole" required class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-brandGreen focus:outline-none bg-white">
+                            <option value="Inspector">HSE Personnel / Safety Inspector</option>
+                            <option value="Supervisor">Plant Supervisor / Operations Manager</option>
+                            <option value="Engineer">Site Engineer / Administrator</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-brandCharcoal mb-1">Password</label>
+                        <div class="relative">
+                            <input type="password" id="regPassword" onkeyup="validatePasswordRequirements()" required placeholder="Min 8 chars (A-z, 0-9, !@#)" class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-brandGreen focus:outline-none pr-9">
+                            <button type="button" onclick="togglePasswordVisibility('regPassword', 'regEyeIcon')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-brandCharcoal">
+                                <i id="regEyeIcon" class="fa-solid fa-eye text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 p-2 rounded border border-gray-200 text-[11px] grid grid-cols-2 gap-1 text-gray-600">
+                        <div id="ruleLength" class="flex items-center text-gray-500">
+                            <i class="fa-solid fa-circle-xmark mr-1 text-red-500"></i>
+                            <span>8+ Characters</span>
+                        </div>
+                        <div id="ruleUpper" class="flex items-center text-gray-500">
+                            <i class="fa-solid fa-circle-xmark mr-1 text-red-500"></i>
+                            <span>Uppercase (A-Z)</span>
+                        </div>
+                        <div id="ruleLower" class="flex items-center text-gray-500">
+                            <i class="fa-solid fa-circle-xmark mr-1 text-red-500"></i>
+                            <span>Lowercase (a-z)</span>
+                        </div>
+                        <div id="ruleNumberSpecial" class="flex items-center text-gray-500">
+                            <i class="fa-solid fa-circle-xmark mr-1 text-red-500"></i>
+                            <span>Number & Symbol</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-brandCharcoal mb-1">Confirm Password</label>
+                        <div class="relative">
+                            <input type="password" id="regConfirmPassword" required placeholder="Repeat password" class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-brandGreen focus:outline-none pr-9">
+                            <button type="button" onclick="togglePasswordVisibility('regConfirmPassword', 'regConfirmEyeIcon')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-brandCharcoal">
+                                <i id="regConfirmEyeIcon" class="fa-solid fa-eye text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-brandGreen text-white py-2.5 rounded-lg text-xs font-semibold hover:bg-emerald-900 transition">
+                        Register Account
+                    </button>
+                </form>
+
+                <div class="text-center text-xs text-gray-600">
+                    Already registered? 
+                    <button onclick="switchView('loginView')" class="text-brandGreen font-bold hover:underline">Back to Login</button>
+                </div>
+            </section>
+
+
+            <!-- ================= VIEW 3: MAIN DASHBOARD ================= -->
+            <section id="dashboardView" class="hidden space-y-3">
+                
+                <!-- User Profile Header Banner -->
+                <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+                    <div class="flex items-center space-x-2.5">
+                        <div id="userAvatar" class="w-10 h-10 rounded-full bg-brandGreen text-brandGold flex items-center justify-center font-bold text-sm shadow">
+                            --
+                        </div>
+                        <div>
+                            <h3 id="dashUserName" class="font-bold text-xs text-brandCharcoal">User Name</h3>
+                            <div class="flex items-center space-x-1">
+                                <span id="dashUserRoleBadge" class="bg-emerald-100 text-brandGreen font-semibold px-2 py-0.5 rounded-full text-[10px]">Inspector</span>
+                                <span class="text-[10px] text-gray-400">• Supabase Online</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="promptLogoutConfirmation()" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-2.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-1">
+                        <i class="fa-solid fa-right-from-bracket text-xs"></i>
+                        <span>Logout</span>
+                    </button>
+                </div>
+
+                <!-- Dynamic Role Navigation Tabs Bar -->
+                <div id="dynamicRoleTabsBar" class="flex bg-gray-200 p-1 rounded-xl text-xs font-medium">
+                    <!-- Tab buttons populated dynamically by JS per role -->
+                </div>
+
+                <!-- TAB CONTENT 1: PRIMARY ROLE TRANSACTIONS -->
+                <div id="tabContentPrimary" class="space-y-3">
+                    
+                    <!-- Action Button for Personnel -->
+                    <div id="inspectorActionArea" class="hidden space-y-2">
+                        <button onclick="openNewAuditModal()" class="w-full bg-brandGreen text-white py-2.5 rounded-xl font-bold text-xs hover:bg-emerald-900 transition flex items-center justify-center space-x-2 shadow">
+                            <i class="fa-solid fa-circle-plus text-brandGold text-base"></i>
+                            <span>Submit Safety Inspection & Requisition</span>
+                        </button>
+                    </div>
+
+                    <!-- Role Workflow Informational Card -->
+                    <div id="workflowRoleDescCard" class="bg-blue-50 border border-blue-200 p-2.5 rounded-lg text-[11px] text-blue-900 space-y-1">
+                        <!-- Content dynamically inserted -->
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <h4 id="primaryTabTitle" class="font-bold text-xs text-brandCharcoal flex items-center">
+                            <i class="fa-solid fa-list-check text-brandGreen mr-1.5"></i> Active Safety Transactions
+                        </h4>
+                        <span id="auditCountBadge" class="bg-gray-200 text-gray-700 text-[10px] font-bold px-2 py-0.5 rounded-full">0 Records</span>
+                    </div>
+
+                    <!-- Audit Feed Container -->
+                    <div id="auditListContainer" class="space-y-3">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+
+                <!-- TAB CONTENT 2: SECONDARY ROLE FEATURE -->
+                <div id="tabContentSecondary" class="hidden space-y-3">
+                    <!-- Dynamic rendering -->
+                </div>
+
+                <!-- TAB CONTENT 3: TERTIARY ROLE FEATURE -->
+                <div id="tabContentTertiary" class="hidden space-y-3">
+                    <!-- Dynamic rendering -->
+                </div>
+
+            </section>
+
+        </main>
+
+        <!-- System Footer -->
+        <footer class="bg-brandCharcoal text-white text-[10px] py-2 px-4 flex items-center justify-between border-t border-gray-700">
+            <span>SafePlant Mobile • v4.1</span>
+            <span class="text-brandGold">WLC Ormoc City • BSIT 3102</span>
+        </footer>
+
+        <!-- ================= MODALS & OVERLAYS ================= -->
+
+        <!-- HIGH-VISIBILITY TOAST NOTIFICATION BANNER (Z-100 HIGH CONTRAST) -->
+        <div id="toastNotification" class="absolute top-14 left-3 right-3 bg-white text-gray-900 p-3.5 rounded-xl shadow-2xl z-[100] flex items-center space-x-3 transform transition-all duration-300 -translate-y-20 opacity-0 border-l-4 border-brandGreen pointer-events-none">
+            <i id="toastIcon" class="fa-solid fa-circle-check text-brandGreen text-xl"></i>
+            <div class="text-xs">
+                <p id="toastTitle" class="font-bold text-gray-900 text-xs">Notification</p>
+                <p id="toastMessage" class="text-gray-700 text-[11px]">Operation successful.</p>
+            </div>
+        </div>
+
+        <!-- SUPERVISOR SIGNATURE ENDORSEMENT MODAL -->
+        <div id="signatureModal" class="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+            <div class="bg-white w-full max-w-xs rounded-2xl p-4 space-y-3 shadow-2xl border border-gray-200">
+                <div class="flex items-center justify-between border-b pb-2">
+                    <h3 class="font-heading font-bold text-xs text-brandCharcoal flex items-center">
+                        <i class="fa-solid fa-signature text-brandGreen mr-1.5"></i> Digital Touch Signature
+                    </h3>
+                    <button onclick="closeSignatureModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+
+                <p class="text-[11px] text-gray-600">Sign inside the box below to authorize & endorse requisition for Admin approval:</p>
+                
+                <div class="border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 overflow-hidden relative">
+                    <canvas id="sigCanvas" width="280" height="120" class="w-full h-28 cursor-crosshair"></canvas>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <button type="button" onclick="clearSigCanvas()" class="text-[11px] text-gray-500 hover:underline">Clear Canvas</button>
+                    <button type="button" onclick="confirmSupervisorEndorsementWithSig()" class="px-4 py-1.5 bg-brandGreen text-white text-xs font-bold rounded-lg hover:bg-emerald-900 transition">
+                        Confirm & Save Endorsement
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- LOGOUT CONFIRMATION MODAL -->
+        <div id="logoutModal" class="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+            <div class="bg-white w-full max-w-xs rounded-2xl p-4 space-y-3 shadow-2xl text-center border-2 border-brandGreen">
+                <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto text-red-600 text-xl">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </div>
+                <h3 class="font-heading font-bold text-sm text-brandCharcoal">Confirm System Logout</h3>
+                <p class="text-xs text-gray-600">Are you sure you want to logout/sign out of SafePlant Mobile?</p>
+                <div class="grid grid-cols-2 gap-2 pt-1">
+                    <button onclick="closeLogoutModal()" class="w-full py-2 bg-gray-200 text-gray-700 rounded-lg text-xs font-semibold hover:bg-gray-300 transition">Cancel</button>
+                    <button onclick="executeLogout()" class="w-full py-2 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700 transition">Yes / Confirm</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- NEW INSPECTION AUDIT & REQUISITION MODAL WITH RISK MATRIX -->
+        <div id="auditModal" class="absolute inset-0 bg-black/60 backdrop-blur-sm z-40 hidden flex items-center justify-center p-4">
+            <div class="bg-white w-full max-w-md rounded-2xl p-4 space-y-3 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar border border-gray-200">
+                <div class="flex items-center justify-between border-b pb-2">
+                    <h3 class="font-heading font-bold text-xs text-brandCharcoal flex items-center">
+                        <i class="fa-solid fa-clipboard-check text-brandGreen mr-1.5 text-base"></i> Safety Audit & Equipment Requisition
+                    </h3>
+                    <button onclick="closeAuditModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+
+                <form id="auditForm" onsubmit="handleCreateAudit(event)" class="space-y-3 text-xs">
+                    <div>
+                        <label class="block font-semibold text-brandCharcoal mb-1">Plant Sub-System Area</label>
+                        <select id="auditArea" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brandGreen bg-white">
+                            <option value="Cement Silos & Pressure Valves">Cement Silos & Pressure Valves</option>
+                            <option value="Mechanical Conveyor Belt Assembly">Mechanical Conveyor Belt Assembly</option>
+                            <option value="Electrical Distribution Panels">Electrical Distribution Panels</option>
+                            <option value="Transit Mixer Truck Control Zone">Transit Mixer Truck Control Zone</option>
+                        </select>
+                    </div>
+
+                    <!-- Interactive Risk Score Matrix Calculator -->
+                    <div class="bg-amber-50 p-2.5 rounded-lg border border-amber-200 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-amber-900 flex items-center"><i class="fa-solid fa-calculator mr-1"></i> Interactive Risk Calculator</span>
+                            <span id="calculatedRiskBadge" class="bg-emerald-100 text-brandGreen font-bold px-2 py-0.5 rounded text-[10px]">Score: 1 (Low)</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-[11px]">
+                            <div>
+                                <label class="block font-medium mb-0.5">Likelihood (1-5)</label>
+                                <select id="riskLikelihood" onchange="recalculateRiskScore()" class="w-full px-2 py-1 border rounded bg-white">
+                                    <option value="1">1 - Rare</option>
+                                    <option value="2">2 - Unlikely</option>
+                                    <option value="3">3 - Moderate</option>
+                                    <option value="4">4 - Likely</option>
+                                    <option value="5">5 - Almost Certain</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-medium mb-0.5">Severity (1-5)</label>
+                                <select id="riskSeverity" onchange="recalculateRiskScore()" class="w-full px-2 py-1 border rounded bg-white">
+                                    <option value="1">1 - Negligible</option>
+                                    <option value="2">2 - Minor</option>
+                                    <option value="3">3 - Moderate</option>
+                                    <option value="4">4 - Major</option>
+                                    <option value="5">5 - Catastrophic</option>
+                                </select>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-amber-800 font-mono">Formula: Risk = Likelihood x Severity</p>
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-brandCharcoal mb-1">Estimated Repair / Equipment Cost (₱)</label>
+                        <input type="number" id="auditEstimatedCost" min="0" step="100" placeholder="e.g., 15000" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brandGreen">
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-brandCharcoal mb-1">Photo Evidence Link (URL / Image Reference)</label>
+                        <input type="url" id="auditPhotoUrl" placeholder="https://images.unsplash.com/..." class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brandGreen">
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-brandCharcoal mb-1">Inspector Remarks & Equipment Requisition Details</label>
+                        <textarea id="auditRemarks" required rows="3" placeholder="Describe issue and specify required replacement parts or safety equipment..." class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brandGreen"></textarea>
+                    </div>
+
+                    <div class="flex justify-end space-x-2 pt-2 border-t">
+                        <button type="button" onclick="closeAuditModal()" class="px-3 py-1.5 bg-gray-200 rounded-lg font-semibold">Cancel</button>
+                        <button type="submit" class="px-4 py-1.5 bg-brandGreen text-white rounded-lg font-semibold hover:bg-emerald-900">Submit Transaction</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- SUPERVISOR LOG HAZARD MODAL -->
+        <div id="supervisorHazardModal" class="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+            <div class="bg-white w-full max-w-sm rounded-2xl p-4 space-y-3 shadow-2xl border border-gray-200">
+                <div class="flex items-center justify-between border-b pb-2">
+                    <h3 class="font-heading font-bold text-xs text-brandCharcoal flex items-center">
+                        <i class="fa-solid fa-triangle-exclamation text-brandGold mr-1.5"></i> Supervisor Hazard Escalation
+                    </h3>
+                    <button onclick="closeSupervisorHazardModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+
+                <form onsubmit="handleSupervisorLogHazard(event)" class="space-y-2.5 text-xs">
+                    <div>
+                        <label class="block font-semibold mb-1">Target Plant Sub-System</label>
+                        <select id="supHazardArea" required class="w-full px-2.5 py-1.5 border rounded-lg bg-white">
+                            <option value="Cement Silos & Pressure Valves">Cement Silos & Pressure Valves</option>
+                            <option value="Mechanical Conveyor Belt Assembly">Mechanical Conveyor Belt Assembly</option>
+                            <option value="Electrical Distribution Panels">Electrical Distribution Panels</option>
+                            <option value="Transit Mixer Truck Control Zone">Transit Mixer Truck Control Zone</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold mb-1">Hazard Urgency Level</label>
+                        <select id="supHazardSeverity" required class="w-full px-2.5 py-1.5 border rounded-lg bg-white">
+                            <option value="Critical Risk">Critical Risk (Requires Urgent Admin Budget Allocation)</option>
+                            <option value="Medium Warning">Medium Warning (Requires Maintenance Work Order)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold mb-1">Estimated Allocation Cost (₱)</label>
+                        <input type="number" id="supHazardCost" min="0" step="500" placeholder="e.g., 25000" class="w-full px-2.5 py-1.5 border rounded-lg">
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold mb-1">Supervisor Engineering Remarks</label>
+                        <textarea id="supHazardRemarks" required rows="3" placeholder="Specify structural defect and admin intervention needed..." class="w-full px-2.5 py-1.5 border rounded-lg focus:ring-2 focus:ring-brandGreen"></textarea>
+                    </div>
+
+                    <div class="flex justify-end space-x-1.5 pt-2 border-t">
+                        <button type="button" onclick="closeSupervisorHazardModal()" class="px-3 py-1.5 bg-gray-200 rounded-lg">Cancel</button>
+                        <button type="submit" class="px-4 py-1.5 bg-brandGold text-brandCharcoal font-bold rounded-lg hover:bg-amber-400 transition">
+                            Escalate to Admin Queue
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- DATABASE-CONNECTED OTP RECOVERY MODAL WITH STRICT IAS PASSWORD CHECKING -->
+        <div id="otpModal" class="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+            <div class="bg-white w-full max-w-xs rounded-2xl p-4 space-y-3 shadow-2xl text-center border border-gray-200">
+                <div class="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center mx-auto text-brandGold text-lg">
+                    <i class="fa-solid fa-key"></i>
+                </div>
+                <h3 class="font-heading font-bold text-sm text-brandCharcoal">Supabase OTP Recovery</h3>
+                <p class="text-xs text-gray-600">Database-backed account recovery & password reset</p>
+
+                <!-- STEP 1: REQUEST OTP -->
+                <div id="otpStep1" class="space-y-2">
+                    <input type="email" id="otpEmailInput" placeholder="Enter registered email" class="w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-brandGreen">
+                    <button onclick="sendOtpCode()" class="w-full py-2 bg-brandGreen text-white rounded-lg text-xs font-semibold hover:bg-emerald-900 transition flex items-center justify-center space-x-1">
+                        <span>Generate & Store OTP to DB</span>
+                        <i class="fa-solid fa-paper-plane text-[10px]"></i>
+                    </button>
+                </div>
+
+                <!-- STEP 2: VERIFY OTP FROM DB -->
+                <div id="otpStep2" class="hidden space-y-2">
+                    <div class="bg-emerald-50 p-2 rounded text-[11px] text-emerald-800 font-mono border border-emerald-200">
+                        Supabase <code class="font-bold">otp_codes</code> Code: <span id="dbGeneratedOtpCode" class="font-bold text-brandGreen">------</span>
+                    </div>
+                    <input type="text" id="otpCodeInput" maxlength="6" placeholder="Enter 6-digit OTP" class="w-full px-3 py-2 text-xs border rounded-lg text-center tracking-widest font-mono">
+                    <button onclick="verifyOtpCode()" class="w-full py-2 bg-brandGreen text-white rounded-lg text-xs font-semibold hover:bg-emerald-900 transition">
+                        Verify & Delete Code from DB
+                    </button>
+                </div>
+
+                <!-- STEP 3: NEW PASSWORD INPUT WITH EYE TOGGLES & STRICT IAS CHECK -->
+                <div id="otpStep3" class="hidden space-y-2 text-left">
+                    <div class="text-[11px] bg-blue-50 text-blue-900 p-2 rounded border border-blue-200">
+                        OTP Verified! Enter new IAS-compliant password for <b id="otpTargetEmail">email</b>.
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-700 mb-0.5">New Password</label>
+                        <div class="relative">
+                            <input type="password" id="otpNewPassword" onkeyup="validateOtpPasswordRequirements()" placeholder="Min 8 chars (A-z, 0-9, !@#)" class="w-full px-3 py-2 text-xs border rounded-lg pr-9 focus:ring-2 focus:ring-brandGreen">
+                            <button type="button" onclick="togglePasswordVisibility('otpNewPassword', 'otpNewEyeIcon')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-brandCharcoal">
+                                <i id="otpNewEyeIcon" class="fa-solid fa-eye text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- IAS Policy Live Checklist Box for OTP Reset -->
+                    <div class="bg-gray-50 p-2 rounded border border-gray-200 text-[10px] grid grid-cols-2 gap-1 text-gray-600">
+                        <div id="otpRuleLength" class="flex items-center text-gray-500">
+                            <i class="fa-solid fa-circle-xmark mr-1 text-red-500"></i>
+                            <span>8+ Characters</span>
+                        </div>
+                        <div id="otpRuleUpper" class="flex items-center text-gray-500">
+                            <i class="fa-solid fa-circle-xmark mr-1 text-red-500"></i>
+                            <span>Uppercase (A-Z)</span>
+                        </div>
+                        <div id="otpRuleLower" class="flex items-center text-gray-500">
+                            <i class="fa-solid fa-circle-xmark mr-1 text-red-500"></i>
+                            <span>Lowercase (a-z)</span>
+                        </div>
+                        <div id="otpRuleNumberSpecial" class="flex items-center text-gray-500">
+                            <i class="fa-solid fa-circle-xmark mr-1 text-red-500"></i>
+                            <span>Number & Symbol</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-700 mb-0.5">Confirm New Password</label>
+                        <div class="relative">
+                            <input type="password" id="otpConfirmPassword" placeholder="Repeat new password" class="w-full px-3 py-2 text-xs border rounded-lg pr-9 focus:ring-2 focus:ring-brandGreen">
+                            <button type="button" onclick="togglePasswordVisibility('otpConfirmPassword', 'otpConfirmEyeIcon')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-brandCharcoal">
+                                <i id="otpConfirmEyeIcon" class="fa-solid fa-eye text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button onclick="handleResetPassword()" class="w-full py-2 bg-brandGreen text-white rounded-lg text-xs font-semibold hover:bg-emerald-900 transition">
+                        Update Password in Supabase DB
+                    </button>
+                </div>
+
+                <button onclick="closeOtpModal()" class="text-xs text-gray-500 hover:underline pt-1">Close</button>
+            </div>
+        </div>
+
+        <!-- USER CRUD MODAL (ENGINEER/ADMIN ONLY) -->
+        <div id="userCrudModal" class="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+            <div class="bg-white w-full max-w-xs rounded-2xl p-4 space-y-3 shadow-2xl border border-gray-200">
+                <h3 id="userCrudTitle" class="font-heading font-bold text-xs text-brandCharcoal">Add System User</h3>
+                <form id="userCrudForm" onsubmit="handleSaveUserCrud(event)" class="space-y-2 text-xs">
+                    <input type="hidden" id="crudUserId">
+                    <div>
+                        <label class="block font-medium mb-0.5">Full Name</label>
+                        <input type="text" id="crudFullName" required class="w-full px-2.5 py-1.5 border rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-0.5">Email / Username</label>
+                        <input type="email" id="crudEmail" required class="w-full px-2.5 py-1.5 border rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-0.5">Role</label>
+                        <select id="crudRole" class="w-full px-2.5 py-1.5 border rounded-lg bg-white">
+                            <option value="Inspector">Inspector (Personnel)</option>
+                            <option value="Supervisor">Supervisor</option>
+                            <option value="Engineer">Engineer (Admin)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-0.5">Status</label>
+                        <select id="crudStatus" class="w-full px-2.5 py-1.5 border rounded-lg bg-white">
+                            <option value="Active">Active</option>
+                            <option value="Suspended">Suspended</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-end space-x-1.5 pt-2 border-t">
+                        <button type="button" onclick="closeUserCrudModal()" class="px-3 py-1 bg-gray-200 rounded text-xs">Cancel</button>
+                        <button type="submit" class="px-3 py-1 bg-brandGreen text-white rounded text-xs font-semibold">Save User</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- DB SCHEMA MODAL FOR PROFESSOR CHECKING -->
+        <div id="dbSchemaModal" class="absolute inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+            <div class="bg-white w-full max-w-lg rounded-2xl p-4 space-y-3 shadow-2xl max-h-[85vh] overflow-y-auto custom-scrollbar border border-gray-200">
+                <div class="flex items-center justify-between border-b pb-2">
+                    <h3 class="font-heading font-bold text-xs text-brandCharcoal flex items-center">
+                        <i class="fa-solid fa-database text-brandGold mr-1.5"></i> PostgreSQL / Supabase DDL Table Relationships
+                    </h3>
+                    <button onclick="toggleDbSchemaModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <p class="text-[11px] text-gray-600">Copy & execute this script inside Supabase SQL Editor to initialize full schema matching the data API configuration.</p>
+                <pre class="bg-gray-900 text-emerald-400 p-3 rounded-lg text-[10px] font-mono overflow-x-auto whitespace-pre-wrap select-all">
+-- 1. Users Table (IAS Authentication & Admin User CRUD)
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    full_name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    role TEXT CHECK (role IN ('Inspector', 'Supervisor', 'Engineer')) DEFAULT 'Inspector',
+    status TEXT CHECK (status IN ('Active', 'Suspended', 'Locked')) DEFAULT 'Active',
+    failed_attempts INT DEFAULT 0,
+    lockout_until TIMESTAMPTZ NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 2. Inspections Table (MAD Multi-Role Transaction Cycle)
+CREATE TABLE IF NOT EXISTS audit_inspections (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    area_name TEXT NOT NULL,
+    severity TEXT NOT NULL,
+    likelihood INT DEFAULT 1,
+    severity_num INT DEFAULT 1,
+    risk_score INT DEFAULT 1,
+    photo_url TEXT NULL,
+    estimated_cost NUMERIC(12,2) DEFAULT 0.00,
+    inspector_id UUID REFERENCES users(id),
+    inspector_name TEXT NOT NULL,
+    remarks TEXT NOT NULL,
+    supervisor_status TEXT DEFAULT 'Pending Endorsement',
+    supervisor_remarks TEXT NULL,
+    supervisor_signature TEXT NULL,
+    admin_approval_status TEXT DEFAULT 'Pending Admin Approval',
+    engineer_status TEXT DEFAULT 'Pending Action',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 3. Log Trails Module (IAS Activity Logging)
+CREATE TABLE IF NOT EXISTS log_trails (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_email TEXT NOT NULL,
+    user_role TEXT NOT NULL,
+    action_performed TEXT NOT NULL,
+    details TEXT NOT NULL,
+    ip_address TEXT DEFAULT '127.0.0.1',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 4. OTP Codes Table (Database Recovery Authentication)
+CREATE TABLE IF NOT EXISTS otp_codes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email TEXT NOT NULL,
+    otp_code TEXT NOT NULL,
+    is_used BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 5. PPE Logs Table (Daily Shift Compliance Records)
+CREATE TABLE IF NOT EXISTS ppe_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    worker_name TEXT NOT NULL,
+    hardhat_boots BOOLEAN DEFAULT FALSE,
+    reflective_vest BOOLEAN DEFAULT FALSE,
+    eye_protection BOOLEAN DEFAULT FALSE,
+    dust_mask BOOLEAN DEFAULT FALSE,
+    logged_by TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+                </pre>
+                <div class="text-right">
+                    <button onclick="toggleDbSchemaModal()" class="px-4 py-1.5 bg-brandGreen text-white text-xs rounded-lg font-semibold">Close SQL View</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- PRINTABLE SHIFT HANDOVER REPORT CONTAINER -->
+    <div id="printableShiftReport" class="hidden bg-white p-6 text-brandCharcoal space-y-4">
+        <div class="border-b-2 border-brandGreen pb-3 flex justify-between items-center">
+            <div>
+                <h2 class="text-xl font-bold font-heading text-brandGreen">SafePlant Mobile - EBR Batching Plant</h2>
+                <p class="text-xs text-gray-600">Brgy. Macabug • Supervisor Operational Shift Handover Report</p>
+            </div>
+            <div class="text-right text-xs">
+                <p class="font-bold">Shift Date: <span id="printDate">--</span></p>
+                <p>Supervisor: <span id="printSupervisor">--</span></p>
+            </div>
+        </div>
+
+        <div class="space-y-2">
+            <h3 class="font-bold text-sm border-b pb-1">1. Shift Sub-System Status & Requisitions Summary</h3>
+            <div id="printHazardSummary" class="text-xs space-y-1"></div>
+        </div>
+
+        <div class="space-y-2 pt-2">
+            <h3 class="font-bold text-sm border-b pb-1">2. Shift Supervisor Operational Remarks</h3>
+            <p id="printShiftNotes" class="text-xs bg-gray-50 p-3 rounded border text-gray-800 font-mono">No shift notes provided.</p>
+        </div>
+
+        <div class="pt-8 flex justify-between text-xs border-t">
+            <div>
+                <p class="font-bold">Prepared By:</p>
+                <div class="h-12"></div>
+                <p class="border-t border-gray-400 pt-1" id="printSigName">EBR Plant Supervisor</p>
+            </div>
+            <div>
+                <p class="font-bold">Acknowledged By (Admin):</p>
+                <div class="h-12"></div>
+                <p class="border-t border-gray-400 pt-1">Site Engineer / Operations Lead</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= JAVASCRIPT LOGIC & LIVE SUPABASE INTEGRATION ================= -->
+    <script>
+        // 1. SUPABASE REST API CONFIGURATION
+        const SUPABASE_CONFIG = {
+            url: 'https://kzgifleqvddlxnqtvzix.supabase.co/rest/v1',
+            anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6Z2lmbGVxdmRkbHhucXR2eml4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIyNzEyNjMsImV4cCI6MjEwNzg0NzI2M30.7JtRcsQv43oALLvkclz_ml8BYkhFtKBv2vWTdVID_4o'
+        };
+
+        function getSupabaseHeaders() {
+            return {
+                'apikey': SUPABASE_CONFIG.anonKey,
+                'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=representation'
+            };
+        }
+
+        // Global State
+        let currentUser = null;
+        let activeTab = 'primary';
+        let loginFailedAttempts = 0;
+        let lockoutEndTime = null;
+        let lockoutTimerInterval = null;
+        let savedShiftNotes = "";
+        
+        // OTP & Signature State
+        let activeOtpEmail = null;
+        let pendingSigAuditId = null;
+        let sigCanvasCtx = null;
+        let isDrawing = false;
+
+        let dbUsers = [];
+        let dbAudits = [];
+        let dbLogs = [];
+        let dbPpeLogs = [];
+        let statusChartInstance = null;
+
+        // INITIALIZATION
+        document.addEventListener('DOMContentLoaded', async () => {
+            initSignatureCanvas();
+            await autoSeedDefaultUsers();
+            await checkActiveSession();
+            addLogTrail('system', 'System', 'APPLICATION_LOAD', 'Login screen initialized with Supabase endpoint');
+        });
+
+        // DIGITAL SIGNATURE CANVAS INITIALIZATION
+        function initSignatureCanvas() {
+            const canvas = document.getElementById('sigCanvas');
+            if (!canvas) return;
+            sigCanvasCtx = canvas.getContext('2d');
+            sigCanvasCtx.lineWidth = 2;
+            sigCanvasCtx.strokeStyle = '#1E4620';
+
+            const getPos = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return { x: clientX - rect.left, y: clientY - rect.top };
+            };
+
+            const startDraw = (e) => { isDrawing = true; const p = getPos(e); sigCanvasCtx.beginPath(); sigCanvasCtx.moveTo(p.x, p.y); };
+            const draw = (e) => { if (!isDrawing) return; const p = getPos(e); sigCanvasCtx.lineTo(p.x, p.y); sigCanvasCtx.stroke(); };
+            const stopDraw = () => { isDrawing = false; };
+
+            canvas.addEventListener('mousedown', startDraw);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDraw);
+            canvas.addEventListener('touchstart', startDraw);
+            canvas.addEventListener('touchmove', draw);
+            canvas.addEventListener('touchend', stopDraw);
+        }
+
+        function clearSigCanvas() {
+            const canvas = document.getElementById('sigCanvas');
+            if (sigCanvasCtx && canvas) sigCanvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // 2. AUTO-SEED SEAMLESS INITIAL USERS
+        async function autoSeedDefaultUsers() {
+            try {
+                const res = await fetch(`${SUPABASE_CONFIG.url}/users?select=*`, { headers: getSupabaseHeaders() });
+                const users = await res.json();
+                if (Array.isArray(users)) {
+                    dbUsers = users;
+                    if (users.length === 0) {
+                        const seedData = [
+                            { full_name: 'Sarah Mae Coyme', email: 'inspector@ebr.ph', password_hash: 'Demo@123', role: 'Inspector', status: 'Active' },
+                            { full_name: 'EBR Plant Manager', email: 'supervisor@ebr.ph', password_hash: 'Demo@123', role: 'Supervisor', status: 'Active' },
+                            { full_name: 'Lead Site Engineer', email: 'engineer@ebr.ph', password_hash: 'Demo@123', role: 'Engineer', status: 'Active' }
+                        ];
+                        const seedRes = await fetch(`${SUPABASE_CONFIG.url}/users`, {
+                            method: 'POST',
+                            headers: getSupabaseHeaders(),
+                            body: JSON.stringify(seedData)
+                        });
+                        if (seedRes.ok) dbUsers = await seedRes.json();
+                    }
+                }
+            } catch (err) { console.error("Supabase Connection Error:", err); }
+        }
+
+        // 3. UI VIEW SWITCHING
+        function switchView(viewId) {
+            document.getElementById('loginView').classList.add('hidden');
+            document.getElementById('registerView').classList.add('hidden');
+            document.getElementById('dashboardView').classList.add('hidden');
+            document.getElementById(viewId).classList.remove('hidden');
+        }
+
+        // 4. DYNAMIC ROLE-BASED TABS RENDERER
+        function renderRoleTabs() {
+            const tabsBar = document.getElementById('dynamicRoleTabsBar');
+            let tabsHtml = '';
+
+            if (currentUser.role === 'Inspector') {
+                tabsHtml = `
+                    <button id="btnTabPrimary" onclick="switchDashTab('primary')" class="flex-1 py-1.5 rounded-lg bg-white text-brandGreen font-bold shadow-sm transition">
+                        <i class="fa-solid fa-clipboard-list mr-1"></i> Audit Requisitions
+                    </button>
+                    <button id="btnTabSecondary" onclick="switchDashTab('secondary')" class="flex-1 py-1.5 rounded-lg text-gray-600 transition">
+                        <i class="fa-solid fa-vest-patches mr-1"></i> PPE Compliance
+                    </button>
+                    <button id="btnTabTertiary" onclick="switchDashTab('tertiary')" class="flex-1 py-1.5 rounded-lg text-gray-600 transition">
+                        <i class="fa-solid fa-clock-rotate-left mr-1"></i> My Submissions
+                    </button>
+                `;
+            } else if (currentUser.role === 'Supervisor') {
+                tabsHtml = `
+                    <button id="btnTabPrimary" onclick="switchDashTab('primary')" class="flex-1 py-1.5 rounded-lg bg-white text-brandGreen font-bold shadow-sm transition">
+                        <i class="fa-solid fa-signature mr-1"></i> Approvals Queue
+                    </button>
+                    <button id="btnTabSecondary" onclick="switchDashTab('secondary')" class="flex-1 py-1.5 rounded-lg text-gray-600 transition">
+                        <i class="fa-solid fa-triangle-exclamation mr-1"></i> Plant Hazards
+                    </button>
+                    <button id="btnTabTertiary" onclick="switchDashTab('tertiary')" class="flex-1 py-1.5 rounded-lg text-gray-600 transition">
+                        <i class="fa-solid fa-print mr-1"></i> Shift Handover
+                    </button>
+                `;
+            } else {
+                tabsHtml = `
+                    <button id="btnTabPrimary" onclick="switchDashTab('primary')" class="flex-1 py-1.5 rounded-lg bg-white text-brandGreen font-bold shadow-sm transition">
+                        <i class="fa-solid fa-chart-pie mr-1"></i> Analytics & Queue
+                    </button>
+                    <button id="btnTabSecondary" onclick="switchDashTab('secondary')" class="flex-1 py-1.5 rounded-lg text-gray-600 transition">
+                        <i class="fa-solid fa-users-gear mr-1"></i> User CRUD
+                    </button>
+                    <button id="btnTabTertiary" onclick="switchDashTab('tertiary')" class="flex-1 py-1.5 rounded-lg text-gray-600 transition">
+                        <i class="fa-solid fa-shield-cat mr-1"></i> Log Trails
+                    </button>
+                `;
+            }
+
+            tabsBar.innerHTML = tabsHtml;
+        }
+
+        function switchDashTab(tabKey) {
+            activeTab = tabKey;
+
+            ['Primary', 'Secondary', 'Tertiary'].forEach(t => {
+                const btn = document.getElementById(`btnTab${t}`);
+                const content = document.getElementById(`tabContent${t}`);
+                if (btn && content) {
+                    if (t.toLowerCase() === tabKey) {
+                        btn.className = "flex-1 py-1.5 rounded-lg bg-white text-brandGreen font-bold shadow-sm transition";
+                        content.classList.remove('hidden');
+                    } else {
+                        btn.className = "flex-1 py-1.5 rounded-lg text-gray-600 transition";
+                        content.classList.add('hidden');
+                    }
+                }
+            });
+
+            if (tabKey === 'primary') renderAudits();
+            if (tabKey === 'secondary') renderSecondaryFeature();
+            if (tabKey === 'tertiary') renderTertiaryFeature();
+        }
+
+        function fillLogin(email, password) {
+            document.getElementById('loginUsername').value = email;
+            document.getElementById('loginPassword').value = password;
+        }
+
+        // UNIVERSAL PASSWORD VISIBILITY TOGGLE FUNCTION
+        function togglePasswordVisibility(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (!input || !icon) return;
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash text-xs';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa-solid fa-eye text-xs';
+            }
+        }
+
+        // 5. AUTHENTICATION LOGIC
+        async function handleLogin(e) {
+            e.preventDefault();
+
+            if (lockoutEndTime && Date.now() < lockoutEndTime) {
+                showToast("Account Locked", "Please wait until the lockout countdown expires.", true);
+                return;
+            }
+
+            const email = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+
+            if (!email || !password) {
+                showToast("Validation Error", "Username and Password fields cannot be empty.", true);
+                return;
+            }
+
+            try {
+                const res = await fetch(`${SUPABASE_CONFIG.url}/users?email=eq.${encodeURIComponent(email)}`, { headers: getSupabaseHeaders() });
+                const matchedUsers = await res.json();
+                
+                if (!Array.isArray(matchedUsers) || matchedUsers.length === 0) {
+                    addLogTrail(email, 'Guest', 'FAILED_LOGIN', 'Account does not exist in Supabase');
+                    showToast("Login Failed", "Account does not exist. Check email or register.", true);
+                    return;
+                }
+
+                const foundUser = matchedUsers[0];
+
+                if (foundUser.status === 'Suspended') {
+                    addLogTrail(email, foundUser.role, 'FAILED_LOGIN', 'Account is suspended');
+                    showToast("Account Suspended", "This account has been administrative suspended.", true);
+                    return;
+                }
+
+                if (foundUser.password_hash !== password) {
+                    loginFailedAttempts++;
+                    addLogTrail(email, foundUser.role, 'FAILED_LOGIN', `Incorrect password attempt #${loginFailedAttempts}`);
+
+                    if (loginFailedAttempts >= 3) {
+                        const lockSeconds = loginFailedAttempts * 15; 
+                        lockoutEndTime = Date.now() + (lockSeconds * 1000);
+                        startLockoutTimer(lockSeconds);
+                        showToast("Account Locked", `3 Failed attempts! Locked out for ${lockSeconds} seconds.`, true);
+                        addLogTrail(email, foundUser.role, 'ACCOUNT_LOCKOUT', `Triggered ${lockSeconds}s lockout`);
+                    } else {
+                        showToast("Login Failed", `Incorrect password. ${3 - loginFailedAttempts} attempt(s) remaining.`, true);
+                    }
+                    return;
+                }
+
+                loginFailedAttempts = 0;
+                currentUser = foundUser;
+
+                if (document.getElementById('rememberMe').checked) {
+                    localStorage.setItem('safePlant_session', JSON.stringify(foundUser));
+                } else {
+                    sessionStorage.setItem('safePlant_session', JSON.stringify(foundUser));
+                }
+
+                addLogTrail(currentUser.email, currentUser.role, 'USER_LOGIN', 'Successful Supabase authentication');
+                showToast("Welcome Back!", `Logged in as ${currentUser.full_name} (${currentUser.role})`);
+                
+                initDashboard();
+            } catch (err) {
+                showToast("Network Error", "Could not verify credentials with Supabase.", true);
+            }
+        }
+
+        function startLockoutTimer(seconds) {
+            const banner = document.getElementById('lockoutBanner');
+            const timerEl = document.getElementById('lockoutTimer');
+            const btn = document.getElementById('btnLoginSubmit');
+
+            banner.classList.remove('hidden');
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            let remaining = seconds;
+            timerEl.innerText = `00:${remaining < 10 ? '0' : ''}${remaining}`;
+
+            clearInterval(lockoutTimerInterval);
+            lockoutTimerInterval = setInterval(() => {
+                remaining--;
+                if (remaining <= 0) {
+                    clearInterval(lockoutTimerInterval);
+                    banner.classList.add('hidden');
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    lockoutEndTime = null;
+                } else {
+                    timerEl.innerText = `00:${remaining < 10 ? '0' : ''}${remaining}`;
+                }
+            }, 1000);
+        }
+
+        // 6. REGISTRATION LOGIC WITH IAS POLICY
+        function validatePasswordRequirements() {
+            const pass = document.getElementById('regPassword').value;
+
+            const hasLength = pass.length >= 8;
+            const hasUpper = /[A-Z]/.test(pass);
+            const hasLower = /[a-z]/.test(pass);
+            const hasNumberSpecial = /[0-9]/.test(pass) && /[^A-Za-z0-9]/.test(pass);
+
+            updateRuleEl('ruleLength', hasLength);
+            updateRuleEl('ruleUpper', hasUpper);
+            updateRuleEl('ruleLower', hasLower);
+            updateRuleEl('ruleNumberSpecial', hasNumberSpecial);
+
+            return hasLength && hasUpper && hasLower && hasNumberSpecial;
+        }
+
+        // STRICT IAS PASSWORD POLICY CHECKER FOR OTP RECOVERY
+        function validateOtpPasswordRequirements() {
+            const pass = document.getElementById('otpNewPassword').value;
+
+            const hasLength = pass.length >= 8;
+            const hasUpper = /[A-Z]/.test(pass);
+            const hasLower = /[a-z]/.test(pass);
+            const hasNumberSpecial = /[0-9]/.test(pass) && /[^A-Za-z0-9]/.test(pass);
+
+            updateRuleEl('otpRuleLength', hasLength);
+            updateRuleEl('otpRuleUpper', hasUpper);
+            updateRuleEl('otpRuleLower', hasLower);
+            updateRuleEl('otpRuleNumberSpecial', hasNumberSpecial);
+
+            return hasLength && hasUpper && hasLower && hasNumberSpecial;
+        }
+
+        function updateRuleEl(id, isPassed) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const icon = el.querySelector('i');
+            if (isPassed) {
+                el.className = "flex items-center text-emerald-700 font-semibold";
+                if (icon) icon.className = "fa-solid fa-circle-check mr-1 text-emerald-600";
+            } else {
+                el.className = "flex items-center text-gray-500";
+                if (icon) icon.className = "fa-solid fa-circle-xmark mr-1 text-red-500";
+            }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+
+            if (!validatePasswordRequirements()) {
+                showToast("Weak Password", "Password does not satisfy IAS security requirements.", true);
+                return;
+            }
+
+            const pass = document.getElementById('regPassword').value;
+            const confirmPass = document.getElementById('regConfirmPassword').value;
+
+            if (pass !== confirmPass) {
+                showToast("Password Mismatch", "Confirm password does not match.", true);
+                return;
+            }
+
+            const email = document.getElementById('regEmail').value.trim();
+
+            try {
+                const checkRes = await fetch(`${SUPABASE_CONFIG.url}/users?email=eq.${encodeURIComponent(email)}`, { headers: getSupabaseHeaders() });
+                const existing = await checkRes.json();
+                if (Array.isArray(existing) && existing.length > 0) {
+                    showToast("Duplicate Account", "An account with this email already exists.", true);
+                    return;
+                }
+
+                const newUserPayload = {
+                    full_name: document.getElementById('regFullName').value.trim(),
+                    email: email,
+                    password_hash: pass,
+                    role: document.getElementById('regRole').value,
+                    status: 'Active',
+                    failed_attempts: 0
+                };
+
+                const insertRes = await fetch(`${SUPABASE_CONFIG.url}/users`, {
+                    method: 'POST',
+                    headers: getSupabaseHeaders(),
+                    body: JSON.stringify(newUserPayload)
+                });
+
+                if (insertRes.ok) {
+                    addLogTrail(email, newUserPayload.role, 'USER_REGISTER', 'Self-registered account added to Supabase users table');
+                    showToast("Registration Success", "Account written to Supabase! Please sign in.");
+                    document.getElementById('registerForm').reset();
+                    switchView('loginView');
+                    fillLogin(email, pass);
+                } else {
+                    showToast("Register Failed", "Supabase rejected the user row creation.", true);
+                }
+            } catch (err) {
+                showToast("Connection Error", "Could not complete registration to database.", true);
+            }
+        }
+
+        // 7. SESSION MANAGEMENT & INITIALIZATION
+        async function checkActiveSession() {
+            const sessionData = localStorage.getItem('safePlant_session') || sessionStorage.getItem('safePlant_session');
+            if (sessionData) {
+                try {
+                    currentUser = JSON.parse(sessionData);
+                    initDashboard();
+                } catch (err) {
+                    switchView('loginView');
+                }
+            } else {
+                switchView('loginView');
+            }
+        }
+
+        function promptLogoutConfirmation() {
+            document.getElementById('logoutModal').classList.remove('hidden');
+        }
+
+        function closeLogoutModal() {
+            document.getElementById('logoutModal').classList.add('hidden');
+        }
+
+        function executeLogout() {
+            if (currentUser) {
+                addLogTrail(currentUser.email, currentUser.role, 'USER_LOGOUT', 'User signed out');
+            }
+            currentUser = null;
+            localStorage.removeItem('safePlant_session');
+            sessionStorage.removeItem('safePlant_session');
+            closeLogoutModal();
+            showToast("Logged Out", "You have been safely logged out.");
+            switchView('loginView');
+        }
+
+        function initDashboard() {
+            switchView('dashboardView');
+
+            document.getElementById('dashUserName').innerText = currentUser.full_name;
+            document.getElementById('dashUserRoleBadge').innerText = currentUser.role === 'Inspector' ? 'HSE Personnel' : currentUser.role;
+            document.getElementById('userAvatar').innerText = currentUser.full_name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+
+            renderRoleTabs();
+
+            const inspectorArea = document.getElementById('inspectorActionArea');
+            const descCard = document.getElementById('workflowRoleDescCard');
+
+            if (currentUser.role === 'Inspector') {
+                inspectorArea.classList.remove('hidden');
+                descCard.innerHTML = `
+                    <p class="font-bold flex items-center"><i class="fa-solid fa-user-check mr-1 text-blue-600"></i> HSE Personnel Workflow:</p>
+                    <p class="text-blue-800">Submit plant walk-through audit, risk matrix scores, & repair cost estimates for Supervisor Endorsement.</p>
+                `;
+            } else if (currentUser.role === 'Supervisor') {
+                inspectorArea.classList.add('hidden');
+                descCard.innerHTML = `
+                    <p class="font-bold flex items-center"><i class="fa-solid fa-user-gear mr-1 text-blue-600"></i> Plant Supervisor Workflow:</p>
+                    <p class="text-blue-800">Review risk scores, draw digital signatures to endorse requisitions, and generate printable shift handovers.</p>
+                `;
+            } else {
+                inspectorArea.classList.remove('hidden');
+                descCard.innerHTML = `
+                    <p class="font-bold flex items-center"><i class="fa-solid fa-user-shield mr-1 text-blue-600"></i> Site Engineer / Admin Control:</p>
+                    <p class="text-blue-800">Monitor live Chart.js safety trends, track total repair budgets, & export CSV audit trails.</p>
+                `;
+            }
+
+            switchDashTab('primary');
+        }
+
+        // 8. CARD RENDERER HELPER FUNCTION WITH RISK & COST DISPLAY
+        function createSingleAuditCardHtml(audit, isSupervisorPendingQueue = false) {
+            let badgeColor = "bg-green-100 text-green-800 border-green-300";
+            if (audit.severity && audit.severity.includes('Medium')) badgeColor = "bg-amber-100 text-amber-800 border-amber-300";
+            if (audit.severity && audit.severity.includes('Critical')) badgeColor = "bg-red-100 text-red-800 border-red-300";
+
+            const formattedDate = audit.created_at ? new Date(audit.created_at).toLocaleString() : 'Just now';
+            const riskVal = audit.risk_score || ((audit.likelihood || 1) * (audit.severity_num || 1));
+            const costVal = parseFloat(audit.estimated_cost || 0).toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
+
+            return `
+                <div class="bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm space-y-2 text-xs">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <span class="text-[10px] font-mono text-gray-400">${audit.id ? audit.id.substring(0,8) : 'AUD'} • ${formattedDate}</span>
+                            <h5 class="font-bold text-brandCharcoal text-xs">${audit.area_name}</h5>
+                        </div>
+                        <div class="text-right">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeColor} block">
+                                ${audit.severity}
+                            </span>
+                            <span class="text-[9px] text-amber-900 font-mono font-bold block mt-0.5">Risk Score: ${riskVal}</span>
+                        </div>
+                    </div>
+
+                    <p class="text-gray-600 bg-gray-50 p-2 rounded border border-gray-100">
+                        <b>Requisition / Remarks (${audit.inspector_name}):</b> ${audit.remarks}
+                    </p>
+
+                    ${audit.photo_url ? `
+                        <div class="my-1">
+                            <a href="${audit.photo_url}" target="_blank" class="text-[10px] text-blue-600 hover:underline flex items-center">
+                                <i class="fa-solid fa-image mr-1"></i> View Photo Evidence
+                            </a>
+                        </div>
+                    ` : ''}
+
+                    <div class="bg-emerald-50/60 p-1.5 rounded border border-emerald-100 text-[11px] flex items-center justify-between font-mono">
+                        <span class="text-emerald-900 font-semibold">Estimated Repair Cost:</span>
+                        <span class="font-bold text-brandGreen">${costVal}</span>
+                    </div>
+
+                    <!-- Workflow Cards -->
+                    <div class="grid grid-cols-2 gap-2 text-[10px]">
+                        <div class="p-1.5 rounded bg-amber-50 border border-amber-200 space-y-0.5">
+                            <span class="font-bold block text-amber-900">Supervisor Endorsement:</span>
+                            <span class="font-semibold ${audit.supervisor_status === 'Endorsed' || audit.supervisor_status === 'Approved' ? 'text-green-700' : (audit.supervisor_status === 'Declined' ? 'text-red-600' : 'text-amber-700')}">
+                                <i class="fa-solid ${audit.supervisor_status === 'Endorsed' || audit.supervisor_status === 'Approved' ? 'fa-circle-check' : (audit.supervisor_status === 'Declined' ? 'fa-circle-xmark' : 'fa-clock')} mr-1"></i>
+                                ${audit.supervisor_status || 'Pending Endorsement'}
+                            </span>
+                            ${audit.supervisor_signature ? `<span class="block text-[8px] text-emerald-800 font-mono"><i class="fa-solid fa-signature"></i> Digitally Signed</span>` : ''}
+                        </div>
+                        <div class="p-1.5 rounded bg-blue-50 border border-blue-200 space-y-0.5">
+                            <span class="font-bold block text-blue-900">Admin Approval:</span>
+                            <span class="font-semibold ${audit.admin_approval_status === 'Approved & Budget Released' || audit.engineer_status === 'Resolved' ? 'text-green-700' : 'text-blue-700'}">
+                                <i class="fa-solid ${audit.admin_approval_status === 'Approved & Budget Released' || audit.engineer_status === 'Resolved' ? 'fa-circle-check' : 'fa-user-check'} mr-1"></i>
+                                ${audit.admin_approval_status || 'Pending Admin Approval'}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Role Action Buttons -->
+                    <div class="flex items-center justify-end space-x-1.5 pt-1 border-t border-gray-100">
+                        ${currentUser.role === 'Supervisor' && isSupervisorPendingQueue ? `
+                            <button onclick="supervisorDeclineAudit('${audit.id}')" class="bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 font-bold px-2 py-1 rounded text-[10px] transition">
+                                <i class="fa-solid fa-xmark mr-1"></i> Decline
+                            </button>
+                            <button onclick="openSignatureModal('${audit.id}')" class="bg-brandGold text-brandCharcoal font-bold px-2.5 py-1 rounded text-[10px] hover:bg-amber-400 transition shadow">
+                                <i class="fa-solid fa-signature mr-1"></i> Sign & Endorse
+                            </button>
+                        ` : ''}
+
+                        ${currentUser.role === 'Engineer' && audit.admin_approval_status !== 'Approved & Budget Released' ? `
+                            <button onclick="adminApproveAudit('${audit.id}')" class="bg-blue-600 text-white font-bold px-2.5 py-1 rounded text-[10px] hover:bg-blue-700 transition shadow">
+                                <i class="fa-solid fa-check-double mr-1"></i> Grant Admin Final Approval
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 9. TAB 1: PRIMARY TRANSACTIONS WITH CHART.JS ANALYTICS & SUPERVISOR RECENT ACTIONS
+        async function renderAudits() {
+            const container = document.getElementById('auditListContainer');
+            const countBadge = document.getElementById('auditCountBadge');
+
+            try {
+                const res = await fetch(`${SUPABASE_CONFIG.url}/audit_inspections?select=*&order=created_at.desc`, { headers: getSupabaseHeaders() });
+                dbAudits = await res.json();
+
+                if (!Array.isArray(dbAudits)) dbAudits = [];
+
+                if (currentUser.role === 'Engineer') {
+                    const totalCost = dbAudits.reduce((acc, curr) => acc + (parseFloat(curr.estimated_cost) || 0), 0);
+                    const costFormatted = totalCost.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
+
+                    let adminHtml = `
+                        <div class="bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm space-y-3">
+                            <div class="flex items-center justify-between border-b pb-2">
+                                <div>
+                                    <h5 class="font-bold text-xs text-brandCharcoal flex items-center">
+                                        <i class="fa-solid fa-chart-line text-brandGreen mr-1.5"></i> Executive Safety & Repair Analytics
+                                    </h5>
+                                    <p class="text-[10px] text-gray-500">Live Supabase Transaction Distribution</p>
+                                </div>
+                                <span class="bg-emerald-100 text-brandGreen font-bold px-2 py-1 rounded text-[10px] font-mono">${costFormatted} Total Budget</span>
+                            </div>
+                            <div class="h-36 relative">
+                                <canvas id="adminStatusChart"></canvas>
+                            </div>
+                        </div>
+                    `;
+
+                    adminHtml += dbAudits.map(audit => createSingleAuditCardHtml(audit, false)).join('');
+                    container.innerHTML = adminHtml;
+                    countBadge.innerText = `${dbAudits.length} Records`;
+
+                    setTimeout(initAdminChart, 100);
+                    return;
+                }
+
+                if (currentUser.role === 'Supervisor') {
+                    const pendingAudits = dbAudits.filter(a => a.supervisor_status === 'Pending Endorsement');
+                    const recentAudits = dbAudits.filter(a => a.supervisor_status === 'Endorsed' || a.supervisor_status === 'Approved' || a.supervisor_status === 'Declined');
+
+                    countBadge.innerText = `${pendingAudits.length} Pending / ${recentAudits.length} Recent`;
+
+                    let html = '';
+
+                    html += `
+                        <div class="space-y-2 mb-4">
+                            <h5 class="font-bold text-xs text-brandCharcoal flex items-center justify-between">
+                                <span><i class="fa-solid fa-clock text-amber-600 mr-1.5"></i> Pending Supervisor Review Queue</span>
+                                <span class="bg-amber-100 text-amber-900 text-[10px] px-2 py-0.5 rounded-full font-bold">${pendingAudits.length} Pending</span>
+                            </h5>
+                    `;
+
+                    if (pendingAudits.length === 0) {
+                        html += `
+                            <div class="bg-white p-4 rounded-xl text-center text-gray-500 text-xs border border-gray-200 shadow-sm">
+                                <i class="fa-solid fa-circle-check text-emerald-500 text-lg mb-1 block"></i>
+                                No pending inspection requisitions awaiting your endorsement.
+                            </div>
+                        `;
+                    } else {
+                        html += pendingAudits.map(audit => createSingleAuditCardHtml(audit, true)).join('');
+                    }
+                    html += `</div>`;
+
+                    html += `
+                        <div class="space-y-2 pt-2 border-t border-gray-300">
+                            <h5 class="font-bold text-xs text-brandCharcoal flex items-center justify-between">
+                                <span><i class="fa-solid fa-clock-rotate-left text-brandGreen mr-1.5"></i> Supervisor Recent Actions & Escalations</span>
+                                <span class="bg-emerald-100 text-brandGreen text-[10px] px-2 py-0.5 rounded-full font-bold">${recentAudits.length} Processed</span>
+                            </h5>
+                    `;
+
+                    if (recentAudits.length === 0) {
+                        html += `
+                            <div class="bg-white p-4 rounded-xl text-center text-gray-500 text-xs border border-gray-200 shadow-sm">
+                                No recent endorsements or hazard escalations logged yet.
+                            </div>
+                        `;
+                    } else {
+                        html += recentAudits.map(audit => createSingleAuditCardHtml(audit, false)).join('');
+                    }
+                    html += `</div>`;
+
+                    container.innerHTML = html;
+                    return;
+                }
+
+                countBadge.innerText = `${dbAudits.length} Records`;
+
+                if (dbAudits.length === 0) {
+                    container.innerHTML = `
+                        <div class="bg-white p-6 rounded-xl text-center text-gray-500 text-xs shadow-sm border">
+                            <i class="fa-solid fa-circle-check text-2xl mb-1 text-emerald-500"></i>
+                            <p>No active requisitions or pending approvals in queue.</p>
+                        </div>`;
+                    return;
+                }
+
+                container.innerHTML = dbAudits.map(audit => createSingleAuditCardHtml(audit, false)).join('');
+            } catch (err) {
+                container.innerHTML = `<div class="p-4 text-center text-red-500 text-xs">Error connecting to Supabase database.</div>`;
+            }
+        }
+
+        function initAdminChart() {
+            const canvas = document.getElementById('adminStatusChart');
+            if (!canvas) return;
+
+            const pending = dbAudits.filter(a => a.admin_approval_status === 'Pending Admin Approval').length;
+            const approved = dbAudits.filter(a => a.admin_approval_status === 'Approved & Budget Released' || a.engineer_status === 'Resolved').length;
+
+            if (statusChartInstance) statusChartInstance.destroy();
+
+            statusChartInstance = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: ['Pending Admin Approval', 'Approved & Budget Released'],
+                    datasets: [{
+                        label: 'Requisitions Count',
+                        data: [pending, approved],
+                        backgroundColor: ['#DDAA11', '#1E4620'],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                }
+            });
+        }
+
+        // 10. TAB 2: SECONDARY FEATURE RENDERER WITH LIVE PPE DB FEED
+async function renderSecondaryFeature() {
+    const container = document.getElementById('tabContentSecondary');
+
+    if (currentUser.role === 'Inspector') {
+        try {
+            const res = await fetch(`${SUPABASE_CONFIG.url}/ppe_logs?select=*&order=created_at.desc&limit=10`, { headers: getSupabaseHeaders() });
+            dbPpeLogs = await res.json();
+            if (!Array.isArray(dbPpeLogs)) dbPpeLogs = [];
+        } catch (err) { dbPpeLogs = []; }
+
+        container.innerHTML = `
+            <div class="space-y-3">
+                <div class="bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm space-y-3">
+                    <div class="border-b pb-2">
+                        <h4 class="font-bold text-xs text-brandCharcoal flex items-center">
+                            <i class="fa-solid fa-vest-patches text-brandGreen mr-1.5"></i> Daily Entry PPE Compliance Logger
+                        </h4>
+                        <p class="text-[10px] text-gray-500">Record shift entry gear verification for EBR Batching Plant</p>
+                    </div>
+                    <form onsubmit="handleLogPpeCheck(event)" class="space-y-2.5 text-xs">
+                        <div>
+                            <label class="block font-semibold text-brandCharcoal mb-1">Shift Worker / Equipment Operator Name</label>
+                            <input type="text" id="ppeWorkerName" required placeholder="e.g., Juan Dela Cruz" class="w-full px-2.5 py-1.5 border rounded-lg focus:ring-2 focus:ring-brandGreen">
+                        </div>
+                        <div class="bg-emerald-50 p-2.5 rounded-lg border border-emerald-200 space-y-1.5 text-[11px] text-emerald-900">
+                            <p class="font-bold">Required EBR Safety Gear Checklist:</p>
+                            <label class="flex items-center"><input type="checkbox" id="ppeHardhat" checked class="mr-2 rounded text-brandGreen"> Safety Hardhat & Steel-Toe Boots</label>
+                            <label class="flex items-center"><input type="checkbox" id="ppeVest" checked class="mr-2 rounded text-brandGreen"> High-Visibility Reflective Vest</label>
+                            <label class="flex items-center"><input type="checkbox" id="ppeGoggles" checked class="mr-2 rounded text-brandGreen"> Eye Protection Goggles</label>
+                            <label class="flex items-center"><input type="checkbox" id="ppeMask" checked class="mr-2 rounded text-brandGreen"> Dust Respirator Mask</label>
+                        </div>
+                        <button type="submit" class="w-full bg-brandGreen text-white py-2 rounded-lg font-semibold hover:bg-emerald-900 transition flex items-center justify-center space-x-1">
+                            <i class="fa-solid fa-circle-check"></i>
+                            <span>Log Shift PPE Compliance Verification</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- LIVE SUPABASE PPE LOGS FEED -->
+                <div class="bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm space-y-2">
+                    <div class="flex items-center justify-between border-b pb-1.5">
+                        <h5 class="font-bold text-xs text-brandCharcoal flex items-center">
+                            <i class="fa-solid fa-list-check text-brandGreen mr-1.5"></i> Recorded PPE Logs (Supabase)
+                        </h5>
+                        <span class="bg-gray-100 border text-gray-700 font-bold px-2 py-0.5 rounded text-[10px]">${dbPpeLogs.length} Records</span>
+                    </div>
+
+                    ${dbPpeLogs.length === 0 ? `
+                        <p class="text-gray-500 text-[11px] text-center py-3">No shift worker PPE logs recorded yet.</p>
+                    ` : dbPpeLogs.map(log => {
+                        const allCompliant = log.hardhat_boots && log.reflective_vest && log.eye_protection && log.dust_mask;
+                        const noCompliance = !log.hardhat_boots && !log.reflective_vest && !log.eye_protection && !log.dust_mask;
+                        const formattedTime = log.created_at ? new Date(log.created_at).toLocaleString() : 'Just now';
+
+                        let badgeText = 'Partial Compliance';
+                        let badgeClass = 'bg-amber-100 text-amber-900';
+
+                        if (allCompliant) {
+                            badgeText = 'Full Compliance';
+                            badgeClass = 'bg-emerald-100 text-brandGreen';
+                        } else if (noCompliance) {
+                            badgeText = 'Non-Compliant';
+                            badgeClass = 'bg-red-100 text-red-700 font-bold';
+                        }
+
+                        return `
+                            <div class="p-2 bg-gray-50 rounded-lg border border-gray-200 text-xs space-y-1">
+                                <div class="flex items-center justify-between font-bold">
+                                    <span class="text-brandCharcoal"><i class="fa-solid fa-user mr-1 text-gray-500"></i> ${log.worker_name}</span>
+                                    <span class="text-[9px] px-1.5 py-0.5 rounded ${badgeClass}">
+                                        ${badgeText}
+                                    </span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-1 text-[10px] text-gray-600">
+                                    <span>${log.hardhat_boots ? '✓ Hardhat & Boots' : '✗ No Boots/Hat'}</span>
+                                    <span>${log.reflective_vest ? '✓ Reflective Vest' : '✗ No Vest'}</span>
+                                    <span>${log.eye_protection ? '✓ Eye Goggles' : '✗ No Goggles'}</span>
+                                    <span>${log.dust_mask ? '✓ Dust Mask' : '✗ No Mask'}</span>
+                                </div>
+                                <div class="text-[9px] text-gray-400 border-t pt-1 flex justify-between font-mono">
+                                    <span>Logged by: ${log.logged_by}</span>
+                                    <span>${formattedTime}</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    } else if (currentUser.role === 'Supervisor') {
+        container.innerHTML = `
+            <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h4 class="font-bold text-xs text-brandCharcoal flex items-center">
+                            <i class="fa-solid fa-triangle-exclamation text-brandGold mr-1.5"></i> Plant Sub-System Hazards Queue
+                        </h4>
+                        <p class="text-[10px] text-gray-500">Supervisor Plant Monitor & Hazard Escalations</p>
+                    </div>
+                    <button onclick="openSupervisorHazardModal()" class="bg-brandGold text-brandCharcoal text-xs font-bold px-2.5 py-1.5 rounded-lg hover:bg-amber-400 transition shadow">
+                        <i class="fa-solid fa-plus-circle mr-1"></i> Log Hazard
+                    </button>
+                </div>
+
+                <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm space-y-2 text-xs">
+                    <div class="flex items-center justify-between border-b pb-1.5">
+                        <span class="font-bold text-brandCharcoal">Cement Silos & Pressure Valves</span>
+                        <span class="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded font-bold">Operational</span>
+                    </div>
+                    <p class="text-gray-600 text-[11px]">Pressure aeration relief valve checked. Aeration line operating within safe 120 PSI threshold.</p>
+                    <div class="text-right pt-1">
+                        <button onclick="openSupervisorHazardModal('Cement Silos & Pressure Valves')" class="text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold px-2 py-1 rounded border border-amber-200">
+                            <i class="fa-solid fa-bullhorn mr-1"></i> Escalate Hazard to Admin
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm space-y-2 text-xs">
+                    <div class="flex items-center justify-between border-b pb-1.5">
+                        <span class="font-bold text-brandCharcoal">Mechanical Conveyor Belt Assembly</span>
+                        <span class="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded font-bold">Caution / Friction</span>
+                    </div>
+                    <p class="text-gray-600 text-[11px]">Roller bearing noise reported during aggregate transfer. Requires greasing and bearing replacement.</p>
+                    <div class="text-right pt-1">
+                        <button onclick="openSupervisorHazardModal('Mechanical Conveyor Belt Assembly')" class="text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold px-2 py-1 rounded border border-amber-200">
+                            <i class="fa-solid fa-bullhorn mr-1"></i> Escalate Hazard to Admin
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm space-y-2 text-xs">
+                    <div class="flex items-center justify-between border-b pb-1.5">
+                        <span class="font-bold text-brandCharcoal">Electrical Distribution Panels</span>
+                        <span class="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded font-bold">Compliant</span>
+                    </div>
+                    <p class="text-gray-600 text-[11px]">Main breaker panel locked and circuit tags verified for 480V batching plant line.</p>
+                    <div class="text-right pt-1">
+                        <button onclick="openSupervisorHazardModal('Electrical Distribution Panels')" class="text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold px-2 py-1 rounded border border-amber-200">
+                            <i class="fa-solid fa-bullhorn mr-1"></i> Escalate Hazard to Admin
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm space-y-2 text-xs">
+                    <div class="flex items-center justify-between border-b pb-1.5">
+                        <span class="font-bold text-brandCharcoal">Transit Mixer Truck Control Zone</span>
+                        <span class="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded font-bold">Compliant</span>
+                    </div>
+                    <p class="text-gray-600 text-[11px]">Washout pit drainage clear of sludge obstruction. Driver speed governor tags verified.</p>
+                    <div class="text-right pt-1">
+                        <button onclick="openSupervisorHazardModal('Transit Mixer Truck Control Zone')" class="text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold px-2 py-1 rounded border border-amber-200">
+                            <i class="fa-solid fa-bullhorn mr-1"></i> Escalate Hazard to Admin
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else {
+        renderUserCrudList();
+    }
+}
+
+        async function handleLogPpeCheck(e) {
+            e.preventDefault();
+            const worker = document.getElementById('ppeWorkerName').value.trim();
+            if (!worker) return;
+
+            const ppePayload = {
+                worker_name: worker,
+                hardhat_boots: document.getElementById('ppeHardhat').checked,
+                reflective_vest: document.getElementById('ppeVest').checked,
+                eye_protection: document.getElementById('ppeGoggles').checked,
+                dust_mask: document.getElementById('ppeMask').checked,
+                logged_by: currentUser.full_name
+            };
+
+            try {
+                const res = await fetch(`${SUPABASE_CONFIG.url}/ppe_logs`, {
+                    method: 'POST',
+                    headers: getSupabaseHeaders(),
+                    body: JSON.stringify(ppePayload)
+                });
+
+                if (res.ok) {
+                    addLogTrail(currentUser.email, currentUser.role, 'PPE_VERIFICATION', `Logged PPE gear verification for worker ${worker}`);
+                    showToast("PPE Check Saved", `Equipment check saved to database for ${worker}.`);
+                    document.getElementById('ppeWorkerName').value = '';
+                    renderSecondaryFeature();
+                } else {
+                    showToast("Save Failed", "Supabase rejected the PPE log entry.", true);
+                }
+            } catch (err) {
+                showToast("Connection Error", "Network error writing PPE log.", true);
+            }
+        }
+
+        // 11. TAB 3: TERTIARY FEATURE RENDERER WITH WORKING SHIFT PRINT HANDLER
+        function renderTertiaryFeature() {
+            const container = document.getElementById('tabContentTertiary');
+
+            if (currentUser.role === 'Inspector') {
+                const myAudits = dbAudits.filter(a => a.inspector_id === currentUser.id || a.inspector_name === currentUser.full_name);
+                container.innerHTML = `
+                    <div class="space-y-2">
+                        <h4 class="font-bold text-xs text-brandCharcoal flex items-center">
+                            <i class="fa-solid fa-clock-rotate-left text-brandGreen mr-1.5"></i> My Submitted Inspection Reports
+                        </h4>
+                        ${myAudits.length === 0 ? `
+                            <div class="bg-white p-5 rounded-xl text-center text-gray-500 text-xs shadow-sm border">No submission records found for your account.</div>
+                        ` : myAudits.map(a => `
+                            <div class="bg-white p-3 rounded-xl border border-gray-200 text-xs space-y-1 shadow-sm">
+                                <div class="flex items-center justify-between font-bold">
+                                    <span>${a.area_name}</span>
+                                    <span class="text-[10px] text-brandGreen font-mono">${a.supervisor_status}</span>
+                                </div>
+                                <p class="text-gray-600 text-[11px]">${a.remarks}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else if (currentUser.role === 'Supervisor') {
+                container.innerHTML = `
+                    <div class="space-y-3">
+                        <div class="bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm space-y-2.5 text-xs">
+                            <div class="flex items-center justify-between border-b pb-1.5">
+                                <h4 class="font-bold text-brandCharcoal flex items-center">
+                                    <i class="fa-solid fa-print text-brandGreen mr-1.5"></i> Supervisor Shift Handover Printer
+                                </h4>
+                                <button onclick="triggerPrintShiftReport()" class="bg-brandGreen text-white text-[10px] font-bold px-2.5 py-1 rounded-lg hover:bg-emerald-900 transition flex items-center">
+                                    <i class="fa-solid fa-print mr-1"></i> Print Shift Report
+                                </button>
+                            </div>
+                            <p class="text-[11px] text-gray-600">Generates a formatted official shift report summarizing plant sub-system conditions and supervisor endorsements.</p>
+                            <form onsubmit="handleSaveShiftNotes(event)" class="space-y-2 pt-1">
+                                <div>
+                                    <label class="block font-semibold mb-1 text-[11px]">Shift Operational Handover Notes</label>
+                                    <textarea id="supervisorPrintNotes" rows="3" placeholder="Summary of shift operations, aggregate mixing volume, and equipment safety status..." class="w-full px-2.5 py-1.5 border rounded-lg focus:ring-2 focus:ring-brandGreen text-xs">${savedShiftNotes}</textarea>
+                                </div>
+                                <button type="submit" class="w-full bg-brandGold text-brandCharcoal font-bold py-1.5 rounded-lg text-xs hover:bg-amber-400 transition">
+                                    Save Notes to Printable Document
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                `;
+            } else {
+                renderLogTrails();
+            }
+        }
+
+        function handleSaveShiftNotes(e) {
+            e.preventDefault();
+            savedShiftNotes = document.getElementById('supervisorPrintNotes')?.value.trim() || '';
+            showToast("Notes Saved", "Shift notes recorded for printable document.");
+        }
+
+        function triggerPrintShiftReport() {
+            const inputNotes = document.getElementById('supervisorPrintNotes')?.value.trim();
+            if (inputNotes) savedShiftNotes = inputNotes;
+
+            document.getElementById('printDate').innerText = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            document.getElementById('printSupervisor').innerText = currentUser ? currentUser.full_name : 'EBR Supervisor';
+            document.getElementById('printSigName').innerText = currentUser ? currentUser.full_name : 'EBR Plant Supervisor';
+            
+            document.getElementById('printShiftNotes').innerText = savedShiftNotes || 'All plant sub-systems operational.';
+
+            const summaryContainer = document.getElementById('printHazardSummary');
+            if (summaryContainer) {
+                if (dbAudits && dbAudits.length > 0) {
+                    summaryContainer.innerHTML = dbAudits.slice(0, 6).map(a => `
+                        <div class="flex justify-between border-b py-1 text-xs">
+                            <span><b>${a.area_name}</b> - ${a.remarks}</span>
+                            <span class="font-bold text-brandGreen font-mono">${a.supervisor_status} (${a.severity})</span>
+                        </div>
+                    `).join('');
+                } else {
+                    summaryContainer.innerHTML = '<p class="text-gray-500 py-1">No active hazards or audit requisitions recorded for current shift.</p>';
+                }
+            }
+
+            const printEl = document.getElementById('printableShiftReport');
+            printEl.classList.remove('hidden');
+            
+            setTimeout(() => {
+                window.print();
+                printEl.classList.add('hidden');
+            }, 100);
+        }
+
+        // 12. DATABASE-CONNECTED OTP RECOVERY LOGIC (WITH AUTO-DELETE & IAS POLICY ENFORCEMENT)
+        function openOtpRecoveryModal() {
+            document.getElementById('otpStep1').classList.remove('hidden');
+            document.getElementById('otpStep2').classList.add('hidden');
+            document.getElementById('otpStep3').classList.add('hidden');
+            document.getElementById('otpEmailInput').value = '';
+            document.getElementById('otpModal').classList.remove('hidden');
+        }
+
+        function closeOtpModal() {
+            document.getElementById('otpModal').classList.add('hidden');
+        }
+
+        async function sendOtpCode() {
+            const email = document.getElementById('otpEmailInput').value.trim();
+            if (!email) {
+                showToast("Input Required", "Please enter your registered email.", true);
+                return;
+            }
+
+            try {
+                const userRes = await fetch(`${SUPABASE_CONFIG.url}/users?email=eq.${encodeURIComponent(email)}`, { headers: getSupabaseHeaders() });
+                const existingUsers = await userRes.json();
+
+                if (!Array.isArray(existingUsers) || existingUsers.length === 0) {
+                    showToast("Account Not Found", "No registered account found with this email.", true);
+                    return;
+                }
+
+                // Delete any older unused OTP codes for this email from Supabase table
+                await fetch(`${SUPABASE_CONFIG.url}/otp_codes?email=eq.${encodeURIComponent(email)}`, {
+                    method: 'DELETE',
+                    headers: getSupabaseHeaders()
+                });
+
+                const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+
+                const otpPayload = {
+                    email: email,
+                    otp_code: generatedOtp,
+                    is_used: false
+                };
+
+                const insertRes = await fetch(`${SUPABASE_CONFIG.url}/otp_codes`, {
+                    method: 'POST',
+                    headers: getSupabaseHeaders(),
+                    body: JSON.stringify(otpPayload)
+                });
+
+                if (insertRes.ok) {
+                    activeOtpEmail = email;
+
+                    document.getElementById('dbGeneratedOtpCode').innerText = generatedOtp;
+                    document.getElementById('otpStep1').classList.add('hidden');
+                    document.getElementById('otpStep2').classList.remove('hidden');
+
+                    addLogTrail(email, 'Guest', 'OTP_WRITTEN_TO_DB', `Generated OTP code written to Supabase otp_codes table`);
+                    showToast("OTP Saved to DB", "OTP written to Supabase `otp_codes` table.");
+                } else {
+                    showToast("OTP Error", "Failed to write OTP to Supabase database table.", true);
+                }
+            } catch (err) {
+                showToast("Connection Error", "Network error writing OTP to Supabase.", true);
+            }
+        }
+
+        async function verifyOtpCode() {
+            const code = document.getElementById('otpCodeInput').value.trim();
+            if (!code || code.length !== 6) {
+                showToast("Invalid Input", "Please enter the 6-digit code.", true);
+                return;
+            }
+
+            try {
+                const queryRes = await fetch(`${SUPABASE_CONFIG.url}/otp_codes?email=eq.${encodeURIComponent(activeOtpEmail)}&otp_code=eq.${encodeURIComponent(code)}&order=created_at.desc&limit=1`, {
+                    headers: getSupabaseHeaders()
+                });
+
+                const matchedOtps = await queryRes.json();
+
+                if (Array.isArray(matchedOtps) && matchedOtps.length > 0) {
+                    const otpRecord = matchedOtps[0];
+
+                    // DELETE THE USED OTP ROW IMMEDIATELY FROM SUPABASE DATABASE
+                    await fetch(`${SUPABASE_CONFIG.url}/otp_codes?id=eq.${otpRecord.id}`, {
+                        method: 'DELETE',
+                        headers: getSupabaseHeaders()
+                    });
+
+                    document.getElementById('otpTargetEmail').innerText = activeOtpEmail;
+                    document.getElementById('otpStep2').classList.add('hidden');
+                    document.getElementById('otpStep3').classList.remove('hidden');
+                    
+                    // Reset IAS password checklist for OTP Step 3
+                    validateOtpPasswordRequirements();
+
+                    addLogTrail(activeOtpEmail, 'Guest', 'OTP_VERIFIED_DELETED', `OTP verified & deleted from Supabase database table`);
+                    showToast("OTP Verified & Deleted", "OTP verified & removed from database! Set your new password.");
+                } else {
+                    showToast("OTP Verification Failed", "Incorrect code or expired code in database.", true);
+                }
+            } catch (err) {
+                showToast("Verification Error", "Failed to query OTP from Supabase.", true);
+            }
+        }
+
+        async function handleResetPassword() {
+            // STRICT IAS SECURITY COMPLIANCE VERIFICATION
+            if (!validateOtpPasswordRequirements()) {
+                showToast("Weak Password", "New password does not satisfy IAS security requirements (Min 8 chars, Uppercase, Lowercase, Number & Special symbol).", true);
+                return;
+            }
+
+            const newPassword = document.getElementById('otpNewPassword').value.trim();
+            const confirmPassword = document.getElementById('otpConfirmPassword').value.trim();
+
+            if (newPassword !== confirmPassword) {
+                showToast("Mismatch", "Confirm password does not match.", true);
+                return;
+            }
+
+            try {
+                const updateRes = await fetch(`${SUPABASE_CONFIG.url}/users?email=eq.${encodeURIComponent(activeOtpEmail)}`, {
+                    method: 'PATCH',
+                    headers: getSupabaseHeaders(),
+                    body: JSON.stringify({ password_hash: newPassword, failed_attempts: 0, status: 'Active' })
+                });
+
+                if (updateRes.ok) {
+                    // ENSURE ALL REMAINING OTP CODES FOR THIS EMAIL ARE DELETED
+                    await fetch(`${SUPABASE_CONFIG.url}/otp_codes?email=eq.${encodeURIComponent(activeOtpEmail)}`, {
+                        method: 'DELETE',
+                        headers: getSupabaseHeaders()
+                    });
+
+                    addLogTrail(activeOtpEmail, 'User', 'PASSWORD_RESET_SUCCESS', `Updated user password_hash & deleted OTP entries in Supabase`);
+                    showToast("Password Reset Complete", "New password written to Supabase users table!");
+                    closeOtpModal();
+                    fillLogin(activeOtpEmail, newPassword);
+                } else {
+                    showToast("Reset Failed", "Could not update password in database.", true);
+                }
+            } catch (err) {
+                showToast("Connection Error", "Network error updating password.", true);
+            }
+        }
+
+        // 13. SUPERVISOR LOGIC & SIGNATURE HANDLERS
+        function openSignatureModal(auditId) {
+            pendingSigAuditId = auditId;
+            clearSigCanvas();
+            document.getElementById('signatureModal').classList.remove('hidden');
+        }
+
+        function closeSignatureModal() {
+            pendingSigAuditId = null;
+            document.getElementById('signatureModal').classList.add('hidden');
+        }
+
+        async function confirmSupervisorEndorsementWithSig() {
+            if (!pendingSigAuditId) return;
+
+            const canvas = document.getElementById('sigCanvas');
+            const dataUrl = canvas.toDataURL('image/png');
+
+            try {
+                const patchPayload = {
+                    supervisor_status: 'Endorsed',
+                    supervisor_remarks: `Endorsed with digital signature by Supervisor ${currentUser.full_name}`,
+                    supervisor_signature: dataUrl
+                };
+
+                const res = await fetch(`${SUPABASE_CONFIG.url}/audit_inspections?id=eq.${pendingSigAuditId}`, {
+                    method: 'PATCH',
+                    headers: getSupabaseHeaders(),
+                    body: JSON.stringify(patchPayload)
+                });
+
+                if (res.ok) {
+                    addLogTrail(currentUser.email, currentUser.role, 'SUPERVISOR_ENDORSE_SIG', `Endorsed audit with digital touch signature ${pendingSigAuditId}`);
+                    showToast("Signed & Endorsed", `Requisition forwarded for Admin Approval.`);
+                    closeSignatureModal();
+                    renderAudits();
+                }
+            } catch (err) {
+                showToast("Update Error", "Could not save signature endorsement.", true);
+            }
+        }
+
+        function openSupervisorHazardModal(areaName = '') {
+            if (areaName) document.getElementById('supHazardArea').value = areaName;
+            document.getElementById('supervisorHazardModal').classList.remove('hidden');
+        }
+
+        function closeSupervisorHazardModal() {
+            document.getElementById('supervisorHazardModal').classList.add('hidden');
+        }
+
+        async function handleSupervisorLogHazard(e) {
+            e.preventDefault();
+
+            const area = document.getElementById('supHazardArea').value;
+            const severity = document.getElementById('supHazardSeverity').value;
+            const remarks = document.getElementById('supHazardRemarks').value.trim();
+            const cost = document.getElementById('supHazardCost').value || 0;
+
+            const payload = {
+                area_name: area,
+                severity: severity,
+                estimated_cost: cost,
+                inspector_id: currentUser.id,
+                inspector_name: `[Supervisor] ${currentUser.full_name}`,
+                remarks: remarks,
+                supervisor_status: 'Endorsed',
+                supervisor_remarks: `Escalated directly by Supervisor ${currentUser.full_name}`,
+                admin_approval_status: 'Pending Admin Approval',
+                engineer_status: 'Pending Action'
+            };
+
+            try {
+                const res = await fetch(`${SUPABASE_CONFIG.url}/audit_inspections`, {
+                    method: 'POST',
+                    headers: getSupabaseHeaders(),
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    addLogTrail(currentUser.email, currentUser.role, 'HAZARD_ESCALATED', `Escalated plant hazard for ${area}`);
+                    showToast("Hazard Escalated", "Report posted to Admin Queue for Budget Approval!");
+                    closeSupervisorHazardModal();
+                    switchDashTab('primary');
+                } else {
+                    showToast("Escalation Failed", "Could not write hazard to database.", true);
+                }
+            } catch (err) {
+                showToast("Connection Error", "Network connection failed.", true);
+            }
+        }
+
+        async function supervisorDeclineAudit(auditId) {
+            try {
+                const patchPayload = {
+                    supervisor_status: 'Declined',
+                    supervisor_remarks: `Declined by Supervisor ${currentUser.full_name}`
+                };
+
+                const res = await fetch(`${SUPABASE_CONFIG.url}/audit_inspections?id=eq.${auditId}`, {
+                    method: 'PATCH',
+                    headers: getSupabaseHeaders(),
+                    body: JSON.stringify(patchPayload)
+                });
+
+                if (res.ok) {
+                    addLogTrail(currentUser.email, currentUser.role, 'SUPERVISOR_DECLINE', `Declined requisition ${auditId}`);
+                    showToast("Requisition Declined", `Audit marked as declined.`);
+                    renderAudits();
+                }
+            } catch (err) { showToast("Update Error", "Could not update status.", true); }
+        }
+
+        // 14. ADMIN / ENGINEER FUNCTIONS
+        async function adminApproveAudit(auditId) {
+            try {
+                const patchPayload = {
+                    admin_approval_status: 'Approved & Budget Released',
+                    engineer_status: 'Resolved'
+                };
+
+                const res = await fetch(`${SUPABASE_CONFIG.url}/audit_inspections?id=eq.${auditId}`, {
+                    method: 'PATCH',
+                    headers: getSupabaseHeaders(),
+                    body: JSON.stringify(patchPayload)
+                });
+
+                if (res.ok) {
+                    addLogTrail(currentUser.email, currentUser.role, 'ADMIN_FINAL_APPROVAL', `Approved budget & resolution for ticket ${auditId}`);
+                    showToast("Admin Approval Granted", `Requisition finalized & approved by Admin.`);
+                    renderAudits();
+                }
+            } catch (err) { showToast("Update Error", "Could not update approval status.", true); }
+        }
+
+        // 15. USER CRUD MODULE (ADMIN ONLY)
+        async function renderUserCrudList() {
+            const container = document.getElementById('tabContentSecondary');
+            try {
+                const res = await fetch(`${SUPABASE_CONFIG.url}/users?select=*`, { headers: getSupabaseHeaders() });
+                dbUsers = await res.json();
+
+                if (!Array.isArray(dbUsers)) dbUsers = [];
+
+                container.innerHTML = `
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="font-bold text-xs text-brandCharcoal">User Management (CRUD)</h4>
+                                <p class="text-[10px] text-gray-500">Admin Control • Live Supabase <code class="font-bold">users</code> table</p>
+                            </div>
+                            <button onclick="openCreateUserModal()" class="bg-brandGreen text-white text-xs px-2.5 py-1.5 rounded-lg hover:bg-emerald-900 font-medium">
+                                <i class="fa-solid fa-user-plus mr-1"></i> Add User
+                            </button>
+                        </div>
+                        <div id="userListItemsContainer" class="space-y-2">
+                            ${dbUsers.map(usr => `
+                                <div class="bg-white p-2.5 rounded-lg border border-gray-200 flex items-center justify-between text-xs">
+                                    <div>
+                                        <div class="flex items-center space-x-1.5">
+                                            <span class="font-bold text-brandCharcoal">${usr.full_name}</span>
+                                            <span class="text-[9px] bg-gray-100 border px-1.5 rounded font-mono">${usr.role}</span>
+                                            <span class="text-[9px] ${usr.status === 'Active' ? 'text-green-600 font-bold' : 'text-red-500'}">• ${usr.status}</span>
+                                        </div>
+                                        <p class="text-[10px] text-gray-500">${usr.email}</p>
+                                    </div>
+                                    <div class="flex items-center space-x-1">
+                                        <button onclick="editUserCrud('${usr.id}')" class="p-1 bg-gray-100 hover:bg-gray-200 rounded text-brandCharcoal" title="Edit User">
+                                            <i class="fa-solid fa-pen text-[10px]"></i>
+                                        </button>
+                                        <button onclick="deleteUserCrud('${usr.id}')" class="p-1 bg-red-50 hover:bg-red-100 text-red-600 rounded" title="Delete User">
+                                            <i class="fa-solid fa-trash text-[10px]"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } catch (err) { container.innerHTML = `<p class="text-xs text-red-500 p-2">Failed to load user records.</p>`; }
+        }
+
+        function openCreateUserModal() {
+            document.getElementById('userCrudTitle').innerText = 'Add System User';
+            document.getElementById('crudUserId').value = '';
+            document.getElementById('userCrudForm').reset();
+            document.getElementById('userCrudModal').classList.remove('hidden');
+        }
+
+        function editUserCrud(userId) {
+            const usr = dbUsers.find(u => u.id === userId);
+            if (!usr) return;
+
+            document.getElementById('userCrudTitle').innerText = 'Edit User Details';
+            document.getElementById('crudUserId').value = usr.id;
+            document.getElementById('crudFullName').value = usr.full_name;
+            document.getElementById('crudEmail').value = usr.email;
+            document.getElementById('crudRole').value = usr.role;
+            document.getElementById('crudStatus').value = usr.status;
+
+            document.getElementById('userCrudModal').classList.remove('hidden');
+        }
+
+        function closeUserCrudModal() { document.getElementById('userCrudModal').classList.add('hidden'); }
+
+        async function handleSaveUserCrud(e) {
+            e.preventDefault();
+            const id = document.getElementById('crudUserId').value;
+            const fullName = document.getElementById('crudFullName').value.trim();
+            const email = document.getElementById('crudEmail').value.trim();
+            const role = document.getElementById('crudRole').value;
+            const status = document.getElementById('crudStatus').value;
+
+            try {
+                if (id) {
+                    const patchData = { full_name: fullName, email: email, role: role, status: status };
+                    const res = await fetch(`${SUPABASE_CONFIG.url}/users?id=eq.${id}`, {
+                        method: 'PATCH',
+                        headers: getSupabaseHeaders(),
+                        body: JSON.stringify(patchData)
+                    });
+                    if (res.ok) {
+                        addLogTrail(currentUser.email, currentUser.role, 'USER_UPDATE', `Updated user ${email} in Supabase`);
+                        showToast("User Updated", `Account ${email} modified.`);
+                    }
+                } else {
+                    const insertData = { full_name: fullName, email: email, password_hash: 'Demo@123', role: role, status: status };
+                    const res = await fetch(`${SUPABASE_CONFIG.url}/users`, {
+                        method: 'POST',
+                        headers: getSupabaseHeaders(),
+                        body: JSON.stringify(insertData)
+                    });
+                    if (res.ok) {
+                        addLogTrail(currentUser.email, currentUser.role, 'USER_CREATE', `Created account for ${email} in Supabase`);
+                        showToast("User Created", `Added user ${fullName}`);
+                    }
+                }
+            } catch (err) { showToast("Save Failed", "Database operation failed.", true); }
+
+            closeUserCrudModal();
+            renderUserCrudList();
+        }
+
+        async function deleteUserCrud(userId) {
+            if (dbUsers.length <= 1) { showToast("Action Blocked", "Cannot delete sole user.", true); return; }
+            try {
+                const res = await fetch(`${SUPABASE_CONFIG.url}/users?id=eq.${userId}`, {
+                    method: 'DELETE',
+                    headers: getSupabaseHeaders()
+                });
+                if (res.ok) {
+                    addLogTrail(currentUser.email, currentUser.role, 'USER_DELETE', `Deleted user ID ${userId} from Supabase`);
+                    showToast("User Deleted", "Account removed from Supabase.");
+                    renderUserCrudList();
+                }
+            } catch (err) { showToast("Delete Error", "Could not remove user.", true); }
+        }
+
+        // 16. LOG TRAILS MODULE WITH CSV EXPORTER (ADMIN ONLY)
+        async function renderLogTrails() {
+            const container = document.getElementById('tabContentTertiary');
+
+            try {
+                const res = await fetch(`${SUPABASE_CONFIG.url}/log_trails?select=*&order=created_at.desc`, { headers: getSupabaseHeaders() });
+                dbLogs = await res.json();
+
+                if (!Array.isArray(dbLogs)) dbLogs = [];
+
+                container.innerHTML = `
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="font-bold text-xs text-brandCharcoal flex items-center">
+                                    <i class="fa-solid fa-lock text-brandGold mr-1"></i> System Activity Log Trail
+                                </h4>
+                                <p class="text-[10px] text-gray-500">Restricted Admin Security Audit Feed</p>
+                            </div>
+                            <button onclick="exportLogsToCSV()" class="text-xs bg-brandGreen text-white px-2 py-1 rounded font-semibold hover:bg-emerald-900 transition">
+                                <i class="fa-solid fa-file-csv mr-1"></i> Export CSV
+                            </button>
+                        </div>
+                        <div class="space-y-1.5 max-h-[400px] overflow-y-auto custom-scrollbar">
+                            ${dbLogs.map(log => `
+                                <div class="bg-white p-2 rounded border border-gray-200 text-[11px] font-mono space-y-0.5">
+                                    <div class="flex items-center justify-between text-[10px]">
+                                        <span class="font-bold text-brandGreen">${log.action_performed}</span>
+                                        <span class="text-gray-400">${new Date(log.created_at).toLocaleString()}</span>
+                                    </div>
+                                    <p class="text-gray-700"><b>User:</b> ${log.user_email} (${log.user_role})</p>
+                                    <p class="text-gray-500 text-[10px]"><b>Details:</b> ${log.details}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } catch (err) { container.innerHTML = `<p class="text-xs text-red-500 p-2">Failed to load log trails.</p>`; }
+        }
+
+        function exportLogsToCSV() {
+            if (!dbLogs || dbLogs.length === 0) {
+                showToast("Export Warning", "No logs available to export.", true);
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,ID,User Email,Role,Action,Details,Timestamp\n";
+            dbLogs.forEach(l => {
+                csvContent += `"${l.id}","${l.user_email}","${l.user_role}","${l.action_performed}","${l.details.replace(/"/g, '""')}","${l.created_at}"\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `SafePlant_Log_Trails_${new Date().toISOString().substring(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast("CSV Exported", "Downloaded security audit logs CSV file.");
+        }
+
+        async function addLogTrail(email, role, action, details) {
+            const logEntry = {
+                user_email: email,
+                user_role: role,
+                action_performed: action,
+                details: details
+            };
+            try {
+                await fetch(`${SUPABASE_CONFIG.url}/log_trails`, {
+                    method: 'POST',
+                    headers: getSupabaseHeaders(),
+                    body: JSON.stringify(logEntry)
+                });
+            } catch (err) { console.error("Failed to write log trail:", err); }
+        }
+
+        // 17. RECALCULATE RISK SCORE
+        function recalculateRiskScore() {
+            const likelihood = parseInt(document.getElementById('riskLikelihood').value) || 1;
+            const severity = parseInt(document.getElementById('riskSeverity').value) || 1;
+            const score = likelihood * severity;
+
+            const badge = document.getElementById('calculatedRiskBadge');
+            if (!badge) return;
+
+            let levelText = "Score: " + score + " (Low)";
+            let badgeClass = "bg-emerald-100 text-brandGreen font-bold px-2 py-0.5 rounded text-[10px]";
+
+            if (score >= 6 && score <= 12) {
+                levelText = "Score: " + score + " (Medium Warning)";
+                badgeClass = "bg-amber-100 text-amber-900 font-bold px-2 py-0.5 rounded text-[10px]";
+            } else if (score > 12) {
+                levelText = "Score: " + score + " (Critical Hazard)";
+                badgeClass = "bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded text-[10px]";
+            }
+
+            badge.innerText = levelText;
+            badge.className = badgeClass;
+        }
+
+        // 18. AUDIT REQUISITION CREATION WITH RISK MATRIX & COST
+        async function handleCreateAudit(e) {
+            e.preventDefault();
+
+            const likelihood = parseInt(document.getElementById('riskLikelihood').value) || 1;
+            const severityNum = parseInt(document.getElementById('riskSeverity').value) || 1;
+            const riskScore = likelihood * severityNum;
+
+            let severityText = "Low Pass";
+            if (riskScore >= 6 && riskScore <= 12) severityText = "Medium Warning";
+            if (riskScore > 12) severityText = "Critical Risk";
+
+            const newAuditPayload = {
+                area_name: document.getElementById('auditArea').value,
+                severity: severityText,
+                likelihood: likelihood,
+                severity_num: severityNum,
+                risk_score: riskScore,
+                photo_url: document.getElementById('auditPhotoUrl').value.trim() || null,
+                estimated_cost: parseFloat(document.getElementById('auditEstimatedCost').value) || 0.00,
+                inspector_id: currentUser.id,
+                inspector_name: currentUser.full_name,
+                remarks: document.getElementById('auditRemarks').value.trim(),
+                supervisor_status: 'Pending Endorsement',
+                supervisor_remarks: '',
+                admin_approval_status: 'Pending Admin Approval',
+                engineer_status: 'Pending Action'
+            };
+
+            try {
+                const res = await fetch(`${SUPABASE_CONFIG.url}/audit_inspections`, {
+                    method: 'POST',
+                    headers: getSupabaseHeaders(),
+                    body: JSON.stringify(newAuditPayload)
+                });
+
+                if (res.ok) {
+                    addLogTrail(currentUser.email, currentUser.role, 'CREATE_INSPECTION', `Submitted audit for ${newAuditPayload.area_name} with Risk Score ${riskScore}`);
+                    showToast("Audit Submitted", "Inspection & requisition sent for Supervisor Endorsement.");
+                    document.getElementById('auditForm').reset();
+                    closeAuditModal();
+                    renderAudits();
+                } else { showToast("Post Failed", "Supabase rejected table row creation.", true); }
+            } catch (err) { showToast("Connection Error", "Failed to write audit to database.", true); }
+        }
+
+        function openNewAuditModal() {
+            document.getElementById('auditModal').classList.remove('hidden');
+            recalculateRiskScore();
+        }
+
+        function closeAuditModal() { document.getElementById('auditModal').classList.add('hidden'); }
+
+        // 19. HIGH-VISIBILITY TOAST NOTIFICATION HANDLER (Z-100)
+        function showToast(title, message, isError = false) {
+            const toast = document.getElementById('toastNotification');
+            const icon = document.getElementById('toastIcon');
+            const titleEl = document.getElementById('toastTitle');
+            const msgEl = document.getElementById('toastMessage');
+
+            if (!toast) return;
+
+            titleEl.innerText = title;
+            msgEl.innerText = message;
+
+            if (isError) {
+                toast.className = "absolute top-14 left-3 right-3 bg-white text-gray-900 p-3.5 rounded-xl shadow-2xl z-[100] flex items-center space-x-3 transform transition-all duration-300 translate-y-0 opacity-100 border-l-4 border-red-600";
+                icon.className = "fa-solid fa-circle-exclamation text-red-600 text-xl";
+            } else {
+                toast.className = "absolute top-14 left-3 right-3 bg-white text-gray-900 p-3.5 rounded-xl shadow-2xl z-[100] flex items-center space-x-3 transform transition-all duration-300 translate-y-0 opacity-100 border-l-4 border-emerald-600";
+                icon.className = "fa-solid fa-circle-check text-emerald-600 text-xl";
+            }
+
+            setTimeout(() => {
+                toast.className = "absolute top-14 left-3 right-3 bg-white text-gray-900 p-3.5 rounded-xl shadow-2xl z-[100] flex items-center space-x-3 transform transition-all duration-300 -translate-y-20 opacity-0 border-l-4 border-emerald-600 pointer-events-none";
+            }, 3500);
+        }
+
+        function toggleDbSchemaModal() {
+            const modal = document.getElementById('dbSchemaModal');
+            modal.classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>
