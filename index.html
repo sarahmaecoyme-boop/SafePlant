@@ -76,8 +76,8 @@
 </head>
 <body class="min-h-screen flex items-center justify-center p-0 sm:p-4">
 
-    <!-- Mobile Frame Container -->
-    <div class="w-full max-w-md bg-white min-h-screen sm:min-h-[840px] sm:max-h-[900px] sm:rounded-3xl shadow-2xl flex flex-col justify-between overflow-hidden relative border-0 sm:border-4 border-brandCharcoal/20">
+    <!-- Mobile / Desktop Frame Container -->
+    <div id="appFrame" class="w-full max-w-md bg-white min-h-screen sm:min-h-[840px] sm:max-h-[900px] sm:rounded-3xl shadow-2xl flex flex-col justify-between overflow-hidden relative border-0 sm:border-4 border-brandCharcoal/20 transition-all duration-300">
 
         <!-- System Header Bar -->
         <header class="bg-brandGreen text-white px-4 py-3 flex items-center justify-between shadow-md z-10">
@@ -802,6 +802,20 @@ CREATE TABLE IF NOT EXISTS ppe_logs (
             addLogTrail('system', 'System', 'APPLICATION_LOAD', 'Login screen initialized with Supabase endpoint');
         });
 
+        // DYNAMIC LAYOUT SWITCHER (Desktop Web Portal for Admin, Mobile Frame for Personnel & Supervisor)
+        function updateLayoutForRole() {
+            const frame = document.getElementById('appFrame');
+            if (!frame) return;
+
+            if (currentUser && currentUser.role === 'Engineer') {
+                // Desktop Web Layout for Site Engineer / Admin
+                frame.className = "w-full max-w-6xl bg-white min-h-screen sm:min-h-[820px] sm:rounded-2xl shadow-2xl flex flex-col justify-between overflow-hidden relative border-0 sm:border border-gray-200 transition-all duration-300";
+            } else {
+                // Mobile Frame Layout for Inspector & Supervisor
+                frame.className = "w-full max-w-md bg-white min-h-screen sm:min-h-[840px] sm:max-h-[900px] sm:rounded-3xl shadow-2xl flex flex-col justify-between overflow-hidden relative border-0 sm:border-4 border-brandCharcoal/20 transition-all duration-300";
+            }
+        }
+
         // DIGITAL SIGNATURE CANVAS INITIALIZATION
         function initSignatureCanvas() {
             const canvas = document.getElementById('sigCanvas');
@@ -864,6 +878,11 @@ CREATE TABLE IF NOT EXISTS ppe_logs (
             document.getElementById('registerView').classList.add('hidden');
             document.getElementById('dashboardView').classList.add('hidden');
             document.getElementById(viewId).classList.remove('hidden');
+
+            if (viewId === 'loginView' || viewId === 'registerView') {
+                currentUser = null;
+                updateLayoutForRole();
+            }
         }
 
         // 4. DYNAMIC ROLE-BASED TABS RENDERER
@@ -1183,12 +1202,14 @@ CREATE TABLE IF NOT EXISTS ppe_logs (
             localStorage.removeItem('safePlant_session');
             sessionStorage.removeItem('safePlant_session');
             closeLogoutModal();
+            updateLayoutForRole();
             showToast("Logged Out", "You have been safely logged out.");
             switchView('loginView');
         }
 
         function initDashboard() {
             switchView('dashboardView');
+            updateLayoutForRole();
 
             document.getElementById('dashUserName').innerText = currentUser.full_name;
             document.getElementById('dashUserRoleBadge').innerText = currentUser.role === 'Inspector' ? 'HSE Personnel' : currentUser.role;
@@ -1214,8 +1235,8 @@ CREATE TABLE IF NOT EXISTS ppe_logs (
             } else {
                 inspectorArea.classList.remove('hidden');
                 descCard.innerHTML = `
-                    <p class="font-bold flex items-center"><i class="fa-solid fa-user-shield mr-1 text-blue-600"></i> Site Engineer / Admin Control:</p>
-                    <p class="text-blue-800">Monitor live Chart.js safety trends, track total repair budgets, & export CSV audit trails.</p>
+                    <p class="font-bold flex items-center"><i class="fa-solid fa-user-shield mr-1 text-blue-600"></i> Site Engineer / Admin Web Control Portal:</p>
+                    <p class="text-blue-800">Executive desktop view: Monitor live Chart.js safety trends, approve repair budgets, manage users, and inspect logs.</p>
                 `;
             }
 
@@ -1320,23 +1341,28 @@ CREATE TABLE IF NOT EXISTS ppe_logs (
                     const costFormatted = totalCost.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
 
                     let adminHtml = `
-                        <div class="bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm space-y-3">
-                            <div class="flex items-center justify-between border-b pb-2">
-                                <div>
-                                    <h5 class="font-bold text-xs text-brandCharcoal flex items-center">
-                                        <i class="fa-solid fa-chart-line text-brandGreen mr-1.5"></i> Executive Safety & Repair Analytics
-                                    </h5>
-                                    <p class="text-[10px] text-gray-500">Live Supabase Transaction Distribution</p>
+                        <div class="space-y-4">
+                            <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-3">
+                                <div class="flex items-center justify-between border-b pb-2">
+                                    <div>
+                                        <h5 class="font-bold text-sm text-brandCharcoal flex items-center">
+                                            <i class="fa-solid fa-chart-line text-brandGreen mr-2"></i> Executive Safety & Repair Analytics
+                                        </h5>
+                                        <p class="text-xs text-gray-500">Live Supabase Transaction Distribution & Budget Allocation</p>
+                                    </div>
+                                    <span class="bg-emerald-100 text-brandGreen font-bold px-3 py-1 rounded-lg text-xs font-mono">${costFormatted} Total Budget</span>
                                 </div>
-                                <span class="bg-emerald-100 text-brandGreen font-bold px-2 py-1 rounded text-[10px] font-mono">${costFormatted} Total Budget</span>
+                                <div class="h-44 relative">
+                                    <canvas id="adminStatusChart"></canvas>
+                                </div>
                             </div>
-                            <div class="h-36 relative">
-                                <canvas id="adminStatusChart"></canvas>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                ${dbAudits.map(audit => createSingleAuditCardHtml(audit, false)).join('')}
                             </div>
                         </div>
                     `;
 
-                    adminHtml += dbAudits.map(audit => createSingleAuditCardHtml(audit, false)).join('');
                     container.innerHTML = adminHtml;
                     countBadge.innerText = `${dbAudits.length} Records`;
 
@@ -1441,7 +1467,7 @@ CREATE TABLE IF NOT EXISTS ppe_logs (
             });
         }
 
-        // Helper function to render PPE Logs Feed with Admin Approval/Rejection buttons
+        // Helper function to render PPE Logs Feed with Admin Controls ONLY on Pending Status
         function renderPpeLogCardsHtml(logs) {
             if (!logs || logs.length === 0) {
                 return `<p class="text-gray-500 text-[11px] text-center py-3">No shift worker PPE logs recorded yet.</p>`;
@@ -1498,19 +1524,15 @@ CREATE TABLE IF NOT EXISTS ppe_logs (
                             <span>Logged by: ${log.logged_by} • ${formattedTime}</span>
                         </div>
 
-                        <!-- Admin Approve/Reject Controls (Engineer Only) -->
-                        ${isAdmin ? `
+                        <!-- Admin Controls: Only show when status is Pending -->
+                        ${isAdmin && approvalStatus === 'Pending' ? `
                             <div class="flex items-center justify-end space-x-1.5 pt-1.5 border-t border-gray-200">
-                                ${approvalStatus !== 'Approved' ? `
-                                    <button onclick="adminApprovePpeLog('${log.id}')" class="bg-brandGreen text-white font-bold px-2.5 py-1 rounded text-[10px] hover:bg-emerald-900 transition flex items-center shadow-sm">
-                                        <i class="fa-solid fa-check mr-1"></i> Approve
-                                    </button>
-                                ` : ''}
-                                ${approvalStatus !== 'Rejected' ? `
-                                    <button onclick="adminRejectPpeLog('${log.id}')" class="bg-red-600 text-white font-bold px-2.5 py-1 rounded text-[10px] hover:bg-red-700 transition flex items-center shadow-sm">
-                                        <i class="fa-solid fa-xmark mr-1"></i> Reject
-                                    </button>
-                                ` : ''}
+                                <button onclick="adminApprovePpeLog('${log.id}')" class="bg-brandGreen text-white font-bold px-2.5 py-1 rounded text-[10px] hover:bg-emerald-900 transition flex items-center shadow-sm">
+                                    <i class="fa-solid fa-check mr-1"></i> Approve
+                                </button>
+                                <button onclick="adminRejectPpeLog('${log.id}')" class="bg-red-600 text-white font-bold px-2.5 py-1 rounded text-[10px] hover:bg-red-700 transition flex items-center shadow-sm">
+                                    <i class="fa-solid fa-xmark mr-1"></i> Reject
+                                </button>
                             </div>
                         ` : ''}
                     </div>
@@ -1559,11 +1581,10 @@ CREATE TABLE IF NOT EXISTS ppe_logs (
             }
         }
 
-        // 10. TAB 2: SECONDARY FEATURE RENDERER (SHARED PPE LOG ACCESS WITH ASYNC FIX)
+        // 10. TAB 2: SECONDARY FEATURE RENDERER
         async function renderSecondaryFeature() {
             const container = document.getElementById('tabContentSecondary');
 
-            // Fetch latest PPE logs from Supabase for all roles
             try {
                 const res = await fetch(`${SUPABASE_CONFIG.url}/ppe_logs?select=*&order=created_at.desc&limit=10`, { headers: getSupabaseHeaders() });
                 dbPpeLogs = await res.json();
@@ -1573,7 +1594,7 @@ CREATE TABLE IF NOT EXISTS ppe_logs (
             }
 
             const ppeFeedCardHtml = `
-                <div class="bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm space-y-2 mt-3">
+                <div class="bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm space-y-2 mt-3 lg:mt-0">
                     <div class="flex items-center justify-between border-b pb-1.5">
                         <h5 class="font-bold text-xs text-brandCharcoal flex items-center">
                             <i class="fa-solid fa-list-check text-brandGreen mr-1.5"></i> Recorded PPE Logs (Supabase)
@@ -1661,12 +1682,18 @@ CREATE TABLE IF NOT EXISTS ppe_logs (
                     </div>
                 `;
             } else {
-                // Engineer / Admin View: AWAIT the User CRUD rendering first before appending PPE Feed
+                // Engineer / Admin View: Desktop Side-by-Side Panel Grid Layout
                 await renderUserCrudList();
                 
                 const crudContainer = document.getElementById('tabContentSecondary');
                 if (crudContainer) {
-                    crudContainer.innerHTML += ppeFeedCardHtml;
+                    const crudContentHtml = crudContainer.innerHTML;
+                    crudContainer.innerHTML = `
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+                            <div>${crudContentHtml}</div>
+                            <div>${ppeFeedCardHtml}</div>
+                        </div>
+                    `;
                 }
             }
         }
@@ -2151,7 +2178,6 @@ CREATE TABLE IF NOT EXISTS ppe_logs (
 
         function closeUserCrudModal() { document.getElementById('userCrudModal').classList.add('hidden'); }
 
-        // Ensure User CRUD save/delete calls renderSecondaryFeature() to preserve the PPE Feed below
         async function handleSaveUserCrud(e) {
             e.preventDefault();
             const id = document.getElementById('crudUserId').value;
