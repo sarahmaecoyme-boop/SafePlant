@@ -1492,13 +1492,17 @@ CREATE TABLE IF NOT EXISTS ppe_logs (
                     complianceBadgeClass = 'bg-red-100 text-red-700 font-bold';
                 }
 
-                // Admin Approval status badge
+                // Admin Approval status badge & uniform compliance note
                 const approvalStatus = log.approval_status || 'Pending';
                 let approvalBadge = `<span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200"><i class="fa-solid fa-clock mr-1"></i>Pending</span>`;
+                let statusNote = `<span class="text-[10px] text-amber-700 font-medium block mt-1"><i class="fa-solid fa-circle-info mr-1"></i>Awaiting uniform & PPE verification</span>`;
+
                 if (approvalStatus === 'Approved') {
-                    approvalBadge = `<span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200"><i class="fa-solid fa-circle-check mr-1"></i>Approved</span>`;
+                    approvalBadge = `<span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold"><i class="fa-solid fa-circle-check mr-1"></i>Approved</span>`;
+                    statusNote = `<span class="text-[10px] text-emerald-700 font-bold block mt-1 bg-emerald-50/80 px-2 py-0.5 rounded border border-emerald-200"><i class="fa-solid fa-circle-check mr-1"></i>Approved: wearing complete uniform</span>`;
                 } else if (approvalStatus === 'Rejected') {
-                    approvalBadge = `<span class="text-[9px] px-1.5 py-0.5 rounded bg-red-50 text-red-800 border border-red-200"><i class="fa-solid fa-circle-xmark mr-1"></i>Rejected</span>`;
+                    approvalBadge = `<span class="text-[9px] px-1.5 py-0.5 rounded bg-red-50 text-red-800 border border-red-200 font-bold"><i class="fa-solid fa-circle-xmark mr-1"></i>Rejected</span>`;
+                    statusNote = `<span class="text-[10px] text-red-600 font-bold block mt-1 bg-red-50/80 px-2 py-0.5 rounded border border-red-200"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Rejected: not wearing complete uniform</span>`;
                 }
 
                 return `
@@ -1512,6 +1516,8 @@ CREATE TABLE IF NOT EXISTS ppe_logs (
                                 </span>
                             </div>
                         </div>
+
+                        ${statusNote}
 
                         <div class="grid grid-cols-2 gap-1 text-[10px] text-gray-600">
                             <span>${log.hardhat_boots ? '✓ Hardhat & Boots' : '✗ No Boots/Hat'}</span>
@@ -1550,8 +1556,8 @@ CREATE TABLE IF NOT EXISTS ppe_logs (
                 });
 
                 if (res.ok) {
-                    addLogTrail(currentUser.email, currentUser.role, 'PPE_LOG_APPROVE', `Approved PPE log record ${logId}`);
-                    showToast("PPE Log Approved", "Worker compliance record marked as Approved.");
+                    addLogTrail(currentUser.email, currentUser.role, 'PPE_LOG_APPROVE', `Approved PPE log record ${logId} (wearing complete uniform)`);
+                    showToast("PPE Log Approved", "Approved: wearing complete uniform");
                     renderSecondaryFeature();
                 } else {
                     showToast("Update Failed", "Could not approve PPE log.", true);
@@ -1570,8 +1576,8 @@ CREATE TABLE IF NOT EXISTS ppe_logs (
                 });
 
                 if (res.ok) {
-                    addLogTrail(currentUser.email, currentUser.role, 'PPE_LOG_REJECT', `Rejected PPE log record ${logId}`);
-                    showToast("PPE Log Rejected", "Worker compliance record marked as Rejected.", true);
+                    addLogTrail(currentUser.email, currentUser.role, 'PPE_LOG_REJECT', `Rejected PPE log record ${logId} (not wearing complete uniform)`);
+                    showToast("PPE Log Rejected", "Rejected: not wearing complete uniform", true);
                     renderSecondaryFeature();
                 } else {
                     showToast("Update Failed", "Could not reject PPE log.", true);
